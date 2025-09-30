@@ -13,6 +13,8 @@
         button:hover { background-color: #166fe5; }
         #logout-button, .cancel-button { background-color: #fa3e3e; }
         #logout-button:hover, .cancel-button:hover { background-color: #e03030; }
+        #login-view-admin { padding: 50px 0; text-align: center; }
+        #admin-login-button { max-width: 300px; }
         .tab-buttons { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
         .tab-button { background: none; border: none; padding: 15px; font-size: 16px; cursor: pointer; color: #606770; border-bottom: 2px solid transparent; }
         .tab-button.active { color: #1877f2; border-bottom-color: #1877f2; font-weight: bold; }
@@ -31,11 +33,8 @@
 <div id="container">
     <div id="login-view-admin">
         <h1>Panel Admin LAJUI DAH</h1>
-        <form id="login-form-admin">
-            <input type="email" id="login-email-admin" placeholder="Email Admin" required>
-            <input type="password" id="login-password-admin" placeholder="Password" required>
-            <button type="submit">Login</button>
-        </form>
+        <p>Silakan login untuk melanjutkan</p>
+        <button id="admin-login-button">Login Sebagai Admin</button>
     </div>
 
     <div id="admin-dashboard" class="hidden">
@@ -65,17 +64,9 @@
             <h3>Database Pegawai</h3>
             <table>
                 <thead>
-                    <tr>
-                        <th>Nama</th>
-                        <th>NIP</th>
-                        <th>Pangkat</th>
-                        <th>NPSN</th>
-                        <th>Aksi</th>
-                    </tr>
+                    <tr><th>Nama</th><th>NIP</th><th>Pangkat</th><th>NPSN</th><th>Aksi</th></tr>
                 </thead>
-                <tbody id="pegawai-list">
-                    <tr><td colspan="5" style="text-align: center;">Memuat data...</td></tr>
-                </tbody>
+                <tbody id="pegawai-list"></tbody>
             </table>
         </div>
 
@@ -103,9 +94,16 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
+    // --- PENGATURAN LOGIN BARU ---
+    // Ganti dengan password kuat yang Anda buat di Firebase Console
+    const ADMIN_FIREBASE_EMAIL = "admin@lajui-dah.com"; 
+    const ADMIN_FIREBASE_PASSWORD = "PasswordRahasiaFirebase123"; // <-- GANTI INI
+    const POPUP_PASSWORD = "1986";
+
     // DOM Elements
     const loginView = document.getElementById('login-view-admin');
     const adminDashboard = document.getElementById('admin-dashboard');
+    const adminLoginButton = document.getElementById('admin-login-button');
     const pegawaiForm = document.getElementById('pegawai-form');
     const pegawaiList = document.getElementById('pegawai-list');
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
@@ -113,14 +111,13 @@
 
     // --- AUTH & NAVIGATION ---
     auth.onAuthStateChanged(async user => {
-        if (user) {
+        if (user && user.email === ADMIN_FIREBASE_EMAIL) {
             const userDoc = await db.collection('users').doc(user.uid).get();
             if (userDoc.exists && userDoc.data().role === 'admin') {
                 loginView.classList.add('hidden');
                 adminDashboard.classList.remove('hidden');
-                loadPegawai(); // Muat data pegawai saat login berhasil
+                loadPegawai(); 
             } else {
-                alert("Akses Ditolak! Anda bukan admin.");
                 auth.signOut();
             }
         } else {
@@ -129,11 +126,18 @@
         }
     });
 
-    document.getElementById('login-form-admin').addEventListener('submit', e => {
-        e.preventDefault();
-        const email = document.getElementById('login-email-admin').value;
-        const password = document.getElementById('login-password-admin').value;
-        auth.signInWithEmailAndPassword(email, password).catch(err => alert(err.message));
+    // Event listener untuk tombol login baru
+    adminLoginButton.addEventListener('click', () => {
+        const inputPassword = prompt("Silakan masukkan password admin:");
+        if (inputPassword === POPUP_PASSWORD) {
+            // Jika password pop-up benar, login ke Firebase secara otomatis
+            auth.signInWithEmailAndPassword(ADMIN_FIREBASE_EMAIL, ADMIN_FIREBASE_PASSWORD)
+                .catch(err => {
+                    alert("Gagal login ke Firebase. Pastikan akun admin sudah dibuat. Error: " + err.message);
+                });
+        } else if (inputPassword !== null) { // User memasukkan sesuatu tapi salah
+            alert("Password yang Anda masukkan salah.");
+        }
     });
 
     document.getElementById('logout-button').addEventListener('click', () => auth.signOut());
@@ -146,9 +150,7 @@
         document.getElementById(`${tabName}-tab`).classList.remove('hidden');
         document.querySelector(`.tab-button[onclick="showTab('${tabName}')"]`).classList.add('active');
 
-        if (tabName === 'pengajuan') {
-            loadDaftarPengajuan();
-        }
+        if (tabName === 'pengajuan') { loadDaftarPengajuan(); }
     }
 
     // --- MANAJEMEN PEGAWAI (CRUD) ---
@@ -162,18 +164,18 @@
         pegawaiList.innerHTML = '';
         snapshot.forEach(doc => {
             const pegawai = doc.data();
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${pegawai.nama}</td>
-                <td>${pegawai.nip}</td>
-                <td>${pegawai.pangkat}</td>
-                <td>${pegawai.npsnSekolah}</td>
-                <td class="action-buttons">
-                    <button class="edit-btn" onclick="editPegawai('${doc.id}')">Edit</button>
-                    <button class="delete-btn" onclick="deletePegawai('${doc.id}')">Hapus</button>
-                </td>
+            pegawaiList.innerHTML += `
+                <tr>
+                    <td>${pegawai.nama}</td>
+                    <td>${pegawai.nip}</td>
+                    <td>${pegawai.pangkat}</td>
+                    <td>${pegawai.npsnSekolah}</td>
+                    <td class="action-buttons">
+                        <button class="edit-btn" onclick="editPegawai('${doc.id}')">Edit</button>
+                        <button class="delete-btn" onclick="deletePegawai('${doc.id}')">Hapus</button>
+                    </td>
+                </tr>
             `;
-            pegawaiList.appendChild(tr);
         });
     }
 
@@ -189,10 +191,10 @@
         };
 
         try {
-            if (id) { // Mode Edit
+            if (id) {
                 await db.collection('pegawai').doc(id).update(data);
                 alert('Data pegawai berhasil diperbarui!');
-            } else { // Mode Tambah
+            } else {
                 await db.collection('pegawai').add(data);
                 alert('Data pegawai baru berhasil disimpan!');
             }
@@ -200,9 +202,7 @@
             document.getElementById('pegawai-id').value = '';
             cancelEditBtn.classList.add('hidden');
             loadPegawai();
-        } catch (err) {
-            alert('Error: ' + err.message);
-        }
+        } catch (err) { alert('Error: ' + err.message); }
     });
 
     async function editPegawai(id) {
@@ -216,7 +216,7 @@
             document.getElementById('jabatan-pegawai').value = data.jabatan;
             document.getElementById('npsn-sekolah').value = data.npsnSekolah;
             cancelEditBtn.classList.remove('hidden');
-            window.scrollTo(0, 0); // Scroll ke atas untuk melihat form
+            window.scrollTo(0, 0);
         }
     }
 
@@ -234,10 +234,8 @@
         }
     }
     
-    // --- MANAJEMEN PENGAJUAN (Sama seperti sebelumnya) ---
+    // --- MANAJEMEN PENGAJUAN ---
     async function loadDaftarPengajuan() {
-        // Fungsi ini sama persis dengan kode admin.html sebelumnya
-        // Untuk memuat dan menampilkan daftar pengajuan yang masuk
         const snapshot = await db.collection('pengajuan').orderBy('tanggalPengajuan', 'desc').get();
         if(snapshot.empty){
             daftarPengajuanDiv.innerHTML = '<p>Belum ada pengajuan masuk.</p>';
