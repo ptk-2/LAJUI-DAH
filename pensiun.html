@@ -4,54 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Formulir Usul Pensiun - LAJUI DAH</title>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #4A90E2; --primary-hover: #357ABD; --gray-border: #dfe1e5;
-            --text-color: #333; --text-secondary: #666; --bg-color: #f0f2f5; --white: #ffffff;
-            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1); --light-gray: #f7f8fa;
+            --primary-color: #4A90E2; --primary-hover: #357ABD; --success-color: #28a745;
+            --light-gray: #f7f8fa; --gray-border: #dfe1e5; --text-color: #333;
+            --text-secondary: #666; --bg-color: #f0f2f5; --white: #ffffff;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
-        #container { width: 100%; max-width: 800px; background-color: var(--white); padding: 30px 40px; border-radius: 12px; box-shadow: var(--shadow); }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+        #container { width: 100%; max-width: 800px; background-color: var(--white); padding: 40px; border-radius: 12px; box-shadow: var(--shadow); }
         header { text-align: center; margin-bottom: 30px; }
         h2 { font-size: 28px; margin: 0; color: var(--primary-color); }
-        
-        /* Stepper Navigation */
-        .stepper { display: flex; justify-content: space-between; margin-bottom: 30px; }
-        .step { display: flex; flex-direction: column; align-items: center; flex: 1; position: relative; }
-        .step-icon { width: 40px; height: 40px; border-radius: 50%; background-color: var(--gray-border); color: var(--text-secondary); display: flex; align-items: center; justify-content: center; font-weight: bold; transition: all 0.3s ease; }
-        .step-label { font-size: 12px; color: var(--text-secondary); margin-top: 8px; }
-        .step.active .step-icon { background-color: var(--primary-color); color: var(--white); }
-        .step.active .step-label { color: var(--primary-color); font-weight: bold; }
-        .step:not(:last-child)::after { content: ''; position: absolute; top: 20px; left: 50%; width: 100%; height: 2px; background-color: var(--gray-border); transform: translateX(50%); z-index: -1; }
-
-        /* Form Styling */
-        .form-step { display: none; }
-        .form-step.active { display: block; animation: fadeIn 0.5s; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        h4 { font-size: 18px; color: var(--text-color); margin-top: 30px; margin-bottom: 10px; }
         
         .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 20px; }
         .form-group label { font-weight: bold; font-size: 14px; color: var(--text-secondary); }
+        .input-group { display: flex; gap: 10px; }
+        .input-group input { flex-grow: 1; }
+
         input, select, button { width: 100%; padding: 12px; border: 1px solid var(--gray-border); border-radius: 8px; font-size: 16px; box-sizing: border-box; }
-        input:read-only { background-color: var(--light-gray); }
-        
+        button { background-color: var(--primary-color); color: var(--white); font-weight: bold; cursor: pointer; transition: background-color 0.2s; }
+        button:hover { background-color: var(--primary-hover); }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+
+        input:read-only { background-color: var(--light-gray); color: var(--text-secondary); cursor: not-allowed; }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
         
-        .file-upload-list .form-group { flex-direction: row; align-items: center; background: var(--light-gray); padding: 10px; border-radius: 8px; }
-        .file-upload-list label { flex: 1; font-weight: normal; }
-        .file-upload-list input { width: auto; flex-shrink: 0; }
-
-        .resume-section { margin-bottom: 20px; }
-        .resume-section h4 { border-bottom: 1px solid var(--gray-border); padding-bottom: 5px; margin-bottom: 10px; }
-        .resume-item { display: flex; justify-content: space-between; padding: 5px 0; font-size: 14px; }
-        .resume-item .label { color: var(--text-secondary); }
-
-        .navigation-buttons { display: flex; justify-content: space-between; margin-top: 30px; border-top: 1px solid var(--gray-border); padding-top: 20px; }
-        .nav-button { width: 120px; background-color: var(--primary-color); color: var(--white); font-weight: bold; cursor: pointer; transition: background-color 0.2s; }
-        .nav-button:hover { background-color: var(--primary-hover); }
-        .nav-button:disabled { background-color: #ccc; cursor: not-allowed; }
-        #prev-btn { background-color: var(--text-secondary); }
-        #prev-btn:hover { background-color: #555; }
+        .feedback-box { text-align: center; font-weight: bold; padding: 15px; margin-top: 15px; border-radius: 8px; }
+        .success-box { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error-box { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        
+        .hidden { display: none; }
+        hr { border: none; border-top: 1px solid var(--gray-border); margin: 30px 0; }
     </style>
 </head>
 <body>
@@ -61,81 +45,65 @@
         <h2>Formulir Usul Pensiun</h2>
     </header>
 
-    <div class="stepper">
-        <div class="step active" data-step="1"><div class="step-icon">1</div><div class="step-label">Pencarian Data</div></div>
-        <div class="step" data-step="2"><div class="step-icon">2</div><div class="step-label">Data Pribadi</div></div>
-        <div class="step" data-step="3"><div class="step-icon">3</div><div class="step-label">Data Keluarga</div></div>
-        <div class="step" data-step="4"><div class="step-icon">4</div><div class="step-label">Berkas</div></div>
-        <div class="step" data-step="5"><div class="step-icon">5</div><div class="step-label">Resume</div></div>
-    </div>
-
     <main>
-        <div id="step-1" class="form-step active">
-            <h4>Langkah 1: Pencarian Data Pegawai</h4>
-            <div class="form-group">
-                <label for="npsn-input">Masukkan NPSN Sekolah Anda</label>
-                <input type="number" id="npsn-input" placeholder="Contoh: 12345678">
+        <div id="school-check-view">
+            <h4>Langkah 1: Masukkan NPSN Sekolah Anda</h4>
+            <div class="input-group">
+                <input type="number" id="npsn-input" placeholder="Ketik NPSN lalu klik Cek Sekolah">
+                <button id="check-school-btn" style="width: 150px;">Cek Sekolah</button>
             </div>
+            <div id="school-feedback" class="hidden"></div>
         </div>
 
-        <div id="step-2" class="form-step">
-            <h4>Langkah 2: Lengkapi Data Pribadi</h4>
+        <div id="employee-selection-view" class="hidden">
+            <hr>
+            <h4>Langkah 2: Pilih Nama Anda</h4>
             <div class="form-group">
-                <label for="pegawai-select">Pilih Nama Anda</label>
                 <select id="pegawai-select" required></select>
             </div>
+        </div>
+
+        <form id="main-form-view" class="hidden">
+            <hr>
+            <h4>Langkah 3: Lengkapi dan Periksa Data Anda</h4>
             <div class="form-grid">
-                <div class="form-group"><label>Nama Lengkap</label><input id="nama-display" type="text" readonly></div>
-                <div class="form-group"><label>NIP</label><input id="nip-display" type="text" readonly></div>
-                <div class="form-group"><label>Pangkat / Golongan</label><input id="golongan-display" type="text" readonly></div>
-                <div class="form-group"><label>Jabatan</label><input id="jabatan-display" type="text" readonly></div>
+                <div class="form-group">
+                    <label for="nama-input">Nama Lengkap (Bisa diedit)</label>
+                    <input id="nama-input" type="text" required>
+                </div>
+                <div class="form-group">
+                    <label>NIP</label>
+                    <input id="nip-display" type="text" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Pangkat / Golongan</label>
+                    <input id="golongan-display" type="text" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Jabatan</label>
+                    <input id="jabatan-display" type="text" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="jenis-pensiun">Pilih Jenis Usul Pensiun</label>
+                    <select id="jenis-pensiun" required>
+                        <option value="">-- Pilih Jenis --</option>
+                        <option value="Pensiun Usai Masa Kerja">Pensiun Usai Masa Kerja</option>
+                        <option value="Pensiun Meninggal Dunia">Pensiun Meninggal Dunia</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="noHp-input">Nomor HP/WA Aktif (Bisa diedit)</label>
+                    <input id="noHp-input" type="number" required>
+                </div>
             </div>
             <div class="form-group">
-                <label for="jenis-pensiun">Pilih Jenis Usul Pensiun</label>
-                <select id="jenis-pensiun" required>
-                    <option value="">-- Pilih Jenis --</option>
-                    <option value="Pensiun Usai Masa Kerja">Pensiun Usai Masa Kerja</option>
-                    <option value="Pensiun Meninggal Dunia">Pensiun Meninggal Dunia</option>
-                </select>
+                <label for="dokumen-pensiun">Upload Berkas Persyaratan (PDF)</label>
+                <input id="dokumen-pensiun" type="file" accept=".pdf" required>
             </div>
-             <div class="form-group">
-                <label for="nomor-wa">Nomor HP/WA Aktif</label>
-                <input id="nomor-wa" type="number" placeholder="Contoh: 081234567890" required>
-            </div>
-        </div>
-
-        <div id="step-3" class="form-step">
-            <h4>Langkah 3: Isi Data Keluarga (Jika Ada)</h4>
-            <div class="form-grid">
-                <div class="form-group"><label for="nama-pasangan">Nama Suami/Istri</label><input type="text" id="nama-pasangan"></div>
-                <div class="form-group"><label for="nip-pasangan">NIP Suami/Istri (jika PNS)</label><input type="text" id="nip-pasangan"></div>
-                <div class="form-group"><label for="nama-anak1">Nama Anak 1</label><input type="text" id="nama-anak1"></div>
-                <div class="form-group"><label for="ttl-anak1">Tempat/Tgl Lahir Anak 1</label><input type="text" id="ttl-anak1"></div>
-            </div>
-        </div>
-
-        <div id="step-4" class="form-step">
-            <h4>Langkah 4: Upload Berkas Persyaratan (PDF)</h4>
-            <div class="file-upload-list">
-                <div class="form-group"><label for="file-sk-cpns">1. SK CPNS</label><input type="file" id="file-sk-cpns" accept=".pdf" class="berkas-input"></div>
-                <div class="form-group"><label for="file-sk-pns">2. SK PNS</label><input type="file" id="file-sk-pns" accept=".pdf" class="berkas-input"></div>
-                <div class="form-group"><label for="file-sk-pangkat-terakhir">3. SK Pangkat Terakhir</label><input type="file" id="file-sk-pangkat-terakhir" accept=".pdf" class="berkas-input"></div>
-                <div class="form-group"><label for="file-kk">4. Kartu Keluarga</label><input type="file" id="file-kk" accept=".pdf" class="berkas-input"></div>
-                <div class="form-group"><label for="file-ktp">5. KTP</label><input type="file" id="file-ktp" accept=".pdf" class="berkas-input"></div>
-            </div>
-        </div>
-
-        <div id="step-5" class="form-step">
-            <h4>Langkah 5: Resume Pengajuan</h4>
-            <p>Mohon periksa kembali semua data yang telah Anda masukkan sebelum mengirim.</p>
-            <div id="resume-content"></div>
-        </div>
+            <button id="submit-btn" type="submit">Kirim Pengajuan</button>
+            <div id="submit-feedback" class="hidden" style="margin-top: 20px;"></div>
+        </form>
     </main>
-
-    <div class="navigation-buttons">
-        <button id="prev-btn" class="nav-button">Kembali</button>
-        <button id="next-btn" class="nav-button">Lanjut</button>
-    </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -143,85 +111,54 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 
 <script>
-    // Inisialisasi Firebase
-    const firebaseConfig = { /* ... Konfigurasi Firebase Anda ... */ };
+    const firebaseConfig = {
+      apiKey: "AIzaSyDPUNjOaan-a92NOY9Pz_fHpKyA7tjrJiY",
+      authDomain: "lajui-dah.firebaseapp.com",
+      projectId: "lajui-dah",
+      storageBucket: "lajui-dah.firebasestorage.app",
+      messagingSenderId: "362479392989",
+      appId: "1:362479392989:web:2916e9d03b607c7413a334"
+    };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const storage = firebase.storage();
 
-    // State Management
-    let currentStep = 1;
-    const totalSteps = 5;
-    let formData = {};
-    let dataPegawai = [];
-
     // DOM Elements
-    const prevBtn = document.getElementById('prev-btn');
-    const nextBtn = document.getElementById('next-btn');
+    const checkSchoolBtn = document.getElementById('check-school-btn');
+    const npsnInput = document.getElementById('npsn-input');
+    const schoolFeedback = document.getElementById('school-feedback');
+    const employeeSelectionView = document.getElementById('employee-selection-view');
+    const pegawaiSelect = document.getElementById('pegawai-select');
+    const mainFormView = document.getElementById('main-form-view');
 
-    // Fungsi Navigasi
-    const updateButtons = () => {
-        prevBtn.style.display = currentStep === 1 ? 'none' : 'block';
-        if (currentStep === totalSteps) {
-            nextBtn.textContent = 'Kirim Pengajuan';
-        } else if (currentStep === 1) {
-            nextBtn.textContent = 'Cari Data';
-        } else {
-            nextBtn.textContent = 'Lanjut';
-        }
-    };
+    let dataPegawai = []; // Menyimpan data pegawai yang ditemukan
+    let selectedPegawaiId = null;
 
-    const showStep = (step) => {
-        document.querySelectorAll('.form-step').forEach(el => el.classList.remove('active'));
-        document.getElementById(`step-${step}`).classList.add('active');
-        document.querySelectorAll('.step').forEach(el => {
-            if (parseInt(el.dataset.step) === step) {
-                el.classList.add('active');
-            } else {
-                el.classList.remove('active');
-            }
-        });
-        currentStep = step;
-        updateButtons();
-    };
-
-    const nextStep = async () => {
-        if (currentStep < totalSteps) {
-            // Validasi & Proses untuk setiap langkah sebelum lanjut
-            if (currentStep === 1) await handleStep1();
-            else if (currentStep === 2) handleStep2();
-            else if (currentStep === 3) handleStep3();
-            else if (currentStep === 4) {
-                handleStep4();
-                populateResume();
-                showStep(currentStep + 1);
-            }
-        } else {
-            // Kirim form di langkah terakhir
-            await submitForm();
-        }
-    };
-
-    const prevStep = () => { if (currentStep > 1) showStep(currentStep - 1); };
-
-    // Event Listeners Navigasi
-    nextBtn.addEventListener('click', nextStep);
-    prevBtn.addEventListener('click', prevStep);
-
-    // Penanganan setiap langkah
-    const handleStep1 = async () => {
-        const npsn = document.getElementById('npsn-input').value;
+    // --- TAHAP 1: CEK SEKOLAH ---
+    checkSchoolBtn.addEventListener('click', async () => {
+        const npsn = npsnInput.value;
         if (!npsn) return alert('Mohon masukkan NPSN.');
-        
-        nextBtn.disabled = true;
-        nextBtn.textContent = 'Mencari...';
-        
-        try {
-            const snapshot = await db.collection('pegawai').where('npsnSekolah', '==', npsn).orderBy('nama').get();
-            if (snapshot.empty) throw new Error('Data tidak ditemukan.');
 
-            dataPegawai = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            const pegawaiSelect = document.getElementById('pegawai-select');
+        checkSchoolBtn.disabled = true;
+        checkSchoolBtn.textContent = 'Mencari...';
+        schoolFeedback.classList.add('hidden');
+        employeeSelectionView.classList.add('hidden');
+        mainFormView.classList.add('hidden');
+
+        try {
+            // 1a. Cek nama sekolah di koleksi 'sekolah'
+            const schoolSnapshot = await db.collection('sekolah').where('npsn', '==', npsn).limit(1).get();
+            if (schoolSnapshot.empty) throw new Error('Sekolah dengan NPSN tersebut tidak terdaftar.');
+            
+            const schoolData = schoolSnapshot.docs[0].data();
+            schoolFeedback.textContent = `Sekolah ditemukan: ${schoolData.namaSekolah}`;
+            schoolFeedback.className = 'feedback-box success-box';
+
+            // 1b. Jika sekolah ada, cari pegawai di sekolah tsb
+            const pegawaiSnapshot = await db.collection('pegawai').where('npsnSekolah', '==', npsn).orderBy('nama').get();
+            if (pegawaiSnapshot.empty) throw new Error(`Tidak ada data pegawai yang terdaftar di ${schoolData.namaSekolah}.`);
+
+            dataPegawai = pegawaiSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             pegawaiSelect.innerHTML = '<option value="">-- Pilih Nama Anda --</option>';
             dataPegawai.forEach(p => {
                 const option = document.createElement('option');
@@ -229,122 +166,106 @@
                 option.textContent = p.nama;
                 pegawaiSelect.appendChild(option);
             });
-            showStep(2);
+            
+            employeeSelectionView.classList.remove('hidden');
+
         } catch (error) {
-            alert(error.message);
+            schoolFeedback.textContent = error.message;
+            schoolFeedback.className = 'feedback-box error-box';
         } finally {
-            nextBtn.disabled = false;
-            updateButtons();
-        }
-    };
-
-    const handleStep2 = () => {
-        const selectedId = document.getElementById('pegawai-select').value;
-        if (!selectedId) return alert('Mohon pilih nama Anda.');
-        
-        const pegawai = dataPegawai.find(p => p.id === selectedId);
-        formData.pribadi = pegawai;
-        formData.jenisPensiun = document.getElementById('jenis-pensiun').value;
-        formData.nomorWa = document.getElementById('nomor-wa').value;
-        
-        showStep(3);
-    };
-
-    document.getElementById('pegawai-select').addEventListener('change', (e) => {
-        const pegawai = dataPegawai.find(p => p.id === e.target.value);
-        if (pegawai) {
-            document.getElementById('nama-display').value = pegawai.nama || '';
-            document.getElementById('nip-display').value = pegawai.nip || '';
-            document.getElementById('golongan-display').value = pegawai.golongan || '';
-            document.getElementById('jabatan-display').value = pegawai.jabatan || '';
+            schoolFeedback.classList.remove('hidden');
+            checkSchoolBtn.disabled = false;
+            checkSchoolBtn.textContent = 'Cek Sekolah';
         }
     });
 
-    const handleStep3 = () => {
-        formData.keluarga = {
-            pasangan: document.getElementById('nama-pasangan').value,
-            nipPasangan: document.getElementById('nip-pasangan').value,
-            anak1: document.getElementById('nama-anak1').value,
-            ttlAnak1: document.getElementById('ttl-anak1').value,
-        };
-        showStep(4);
-    };
+    // --- TAHAP 2: PILIH NAMA & ISI FORM OTOMATIS ---
+    pegawaiSelect.addEventListener('change', () => {
+        selectedPegawaiId = pegawaiSelect.value;
+        if (!selectedPegawaiId) {
+            mainFormView.classList.add('hidden');
+            return;
+        }
 
-    const handleStep4 = () => {
-        formData.berkas = {};
-        document.querySelectorAll('.berkas-input').forEach(input => {
-            if (input.files.length > 0) {
-                formData.berkas[input.id] = input.files[0];
-            }
-        });
-    };
-    
-    const populateResume = () => {
-        const resumeContent = document.getElementById('resume-content');
-        resumeContent.innerHTML = `
-            <div class="resume-section">
-                <h4>Data Pribadi</h4>
-                <div class="resume-item"><span class="label">Nama:</span> <span>${formData.pribadi.nama}</span></div>
-                <div class="resume-item"><span class="label">NIP:</span> <span>${formData.pribadi.nip}</span></div>
-                <div class="resume-item"><span class="label">Jenis Pensiun:</span> <span>${formData.jenisPensiun}</span></div>
-            </div>
-            <div class="resume-section">
-                <h4>Data Keluarga</h4>
-                <div class="resume-item"><span class="label">Pasangan:</span> <span>${formData.keluarga.pasangan || '-'}</span></div>
-            </div>
-             <div class="resume-section">
-                <h4>Berkas Terlampir</h4>
-                ${Object.keys(formData.berkas).map(key => `<div class="resume-item"><span class="label">${document.querySelector(`label[for=${key}]`).textContent}</span> <span>✅ Terlampir</span></div>`).join('')}
-            </div>
-        `;
-    };
+        const pegawai = dataPegawai.find(p => p.id === selectedPegawaiId);
+        if (pegawai) {
+            document.getElementById('nama-input').value = pegawai.nama || '';
+            document.getElementById('nip-display').value = pegawai.nip || '';
+            document.getElementById('golongan-display').value = pegawai.golongan || '';
+            document.getElementById('jabatan-display').value = pegawai.jabatan || '';
+            document.getElementById('noHp-input').value = pegawai.noHp || '';
+            mainFormView.classList.remove('hidden');
+        }
+    });
 
-    const submitForm = async () => {
-        nextBtn.disabled = true;
-        nextBtn.textContent = 'Mengirim...';
+    // --- TAHAP 3: KIRIM PENGAJUAN & UPDATE DATA MASTER ---
+    mainFormView.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submitBtn = document.getElementById('submit-btn');
+        const submitFeedback = document.getElementById('submit-feedback');
+
+        if (!selectedPegawaiId) return alert('Sesi tidak valid, mohon ulangi pencarian.');
+        
+        const file = document.getElementById('dokumen-pensiun').files[0];
+        if (!file) return alert('Mohon unggah berkas persyaratan.');
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Mengirim...';
+        submitFeedback.className = 'feedback-box hidden';
+        submitFeedback.textContent = 'Mohon tunggu, sedang mengunggah file...';
+        submitFeedback.classList.remove('hidden');
 
         try {
-            // Upload semua berkas ke Storage
-            const fileURLs = {};
-            const uploadPromises = Object.keys(formData.berkas).map(async key => {
-                const file = formData.berkas[key];
-                const filePath = `dokumen_pensiun/${formData.pribadi.nip}/${file.name}`;
-                const storageRef = storage.ref(filePath);
-                const snapshot = await storageRef.put(file);
-                fileURLs[key] = await snapshot.ref.getDownloadURL();
-            });
-            await Promise.all(uploadPromises);
+            // 1. Upload file ke Storage
+            const filePath = `dokumen_pensiun/${selectedPegawaiId}/${Date.now()}_${file.name}`;
+            const storageRef = storage.ref(filePath);
+            const snapshot = await storageRef.put(file);
+            const downloadURL = await snapshot.ref.getDownloadURL();
+            
+            submitFeedback.textContent = 'File berhasil diunggah, menyimpan data...';
 
-            // Kumpulkan semua data untuk disimpan ke Firestore
-            const finalData = {
-                namaPemohon: formData.pribadi.nama,
-                nipPemohon: formData.pribadi.nip,
-                pangkatGolongan: formData.pribadi.golongan,
-                jabatan: formData.pribadi.jabatan,
-                jenisLayanan: formData.jenisPensiun,
-                nomorWa: formData.nomorWa,
-                dataKeluarga: formData.keluarga,
-                dokumenUrls: fileURLs,
+            // 2. Siapkan data pengajuan baru
+            const pengajuanData = {
+                namaPemohon: document.getElementById('nama-input').value, // Ambil nama yg mungkin sudah diedit
+                nipPemohon: document.getElementById('nip-display').value,
+                pangkatGolongan: document.getElementById('golongan-display').value,
+                jabatan: document.getElementById('jabatan-display').value,
+                jenisLayanan: "Pensiun - " + document.getElementById('jenis-pensiun').value,
+                nomorWa: document.getElementById('noHp-input').value, // Ambil No HP yg mungkin sudah diedit
+                dokumenUrl: downloadURL,
                 status: 'Menunggu Verifikasi',
                 tanggalPengajuan: firebase.firestore.FieldValue.serverTimestamp()
             };
 
-            await db.collection('pengajuan').add(finalData);
+            // 3. Siapkan data untuk diupdate di database master pegawai
+            const pegawaiUpdateData = {
+                nama: document.getElementById('nama-input').value,
+                noHp: document.getElementById('noHp-input').value
+            };
             
-            alert('Pengajuan berhasil dikirim!');
-            window.location.href = 'index.html';
+            // 4. Gunakan Batched Write untuk menjalankan kedua operasi sekaligus
+            const batch = db.batch();
+            const pengajuanRef = db.collection('pengajuan').doc();
+            const pegawaiRef = db.collection('pegawai').doc(selectedPegawaiId);
+
+            batch.set(pengajuanRef, pengajuanData); // Buat pengajuan baru
+            batch.update(pegawaiRef, pegawaiUpdateData); // Update data pegawai yang ada
+            
+            await batch.commit(); // Jalankan kedua operasi
+
+            submitFeedback.className = 'feedback-box success-box';
+            submitFeedback.textContent = 'Pengajuan berhasil dikirim! Data master Anda juga telah diperbarui. Halaman akan dialihkan...';
+
+            setTimeout(() => window.location.href = 'index.html', 4000);
 
         } catch (error) {
-            console.error("Gagal mengirim pengajuan:", error);
-            alert('Terjadi kesalahan saat mengirim pengajuan. Mohon coba lagi.');
-            nextBtn.disabled = false;
-            nextBtn.textContent = 'Kirim Pengajuan';
+            console.error("Error mengirim pengajuan:", error);
+            submitFeedback.className = 'feedback-box error-box';
+            submitFeedback.textContent = 'Gagal mengirim pengajuan. Coba lagi.';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Kirim Pengajuan';
         }
-    };
-    
-    // Inisialisasi tampilan awal
-    showStep(1);
+    });
 </script>
-
 </body>
 </html>
