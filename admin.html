@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LAJUI DAH - Halaman Admin</title>
+    <title>LAJUI DAH - Halaman Admin (Development)</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; color: #333; }
         #container { width: 100%; max-width: 1000px; margin: auto; background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
@@ -11,10 +11,8 @@
         input, select, button { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
         button { background-color: #1877f2; color: white; font-weight: bold; cursor: pointer; border: none; }
         button:hover { background-color: #166fe5; }
-        #logout-button, .cancel-button { background-color: #fa3e3e; }
-        #logout-button:hover, .cancel-button:hover { background-color: #e03030; }
-        #login-view-admin { padding: 50px 0; text-align: center; }
-        #admin-login-button { max-width: 300px; }
+        .cancel-button { background-color: #fa3e3e; }
+        .cancel-button:hover { background-color: #e03030; }
         .tab-buttons { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
         .tab-button { background: none; border: none; padding: 15px; font-size: 16px; cursor: pointer; color: #606770; border-bottom: 2px solid transparent; }
         .tab-button.active { color: #1877f2; border-bottom-color: #1877f2; font-weight: bold; }
@@ -31,17 +29,13 @@
 <body>
 
 <div id="container">
-    <div id="login-view-admin">
+    <div id="login-view-admin" class="hidden">
         <h1>Panel Admin LAJUI DAH</h1>
         <p>Silakan login untuk melanjutkan</p>
-        <button id="admin-login-button">Login Sebagai Admin</button>
     </div>
 
-    <div id="admin-dashboard" class="hidden">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h2 style="text-align: left;">Dasbor Admin</h2>
-            <button id="logout-button" style="width: auto; padding: 10px 20px;">Logout</button>
-        </div>
+    <div id="admin-dashboard">
+        <h2 style="text-align: center;">Dasbor Admin (Mode Pengembangan)</h2>
         
         <div class="tab-buttons">
             <button class="tab-button active" onclick="showTab('pegawai')">Manajemen Pegawai</button>
@@ -94,53 +88,24 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // --- PENGATURAN LOGIN BARU ---
-    // Ganti dengan password kuat yang Anda buat di Firebase Console
-    const ADMIN_FIREBASE_EMAIL = "admin@lajui-dah.com"; 
-    const ADMIN_FIREBASE_PASSWORD = "PasswordRahasiaFirebase123"; // <-- GANTI INI
-    const POPUP_PASSWORD = "1986";
-
     // DOM Elements
-    const loginView = document.getElementById('login-view-admin');
-    const adminDashboard = document.getElementById('admin-dashboard');
-    const adminLoginButton = document.getElementById('admin-login-button');
     const pegawaiForm = document.getElementById('pegawai-form');
     const pegawaiList = document.getElementById('pegawai-list');
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
     const daftarPengajuanDiv = document.getElementById('daftar-pengajuan');
 
-    // --- AUTH & NAVIGATION ---
-    auth.onAuthStateChanged(async user => {
-        if (user && user.email === ADMIN_FIREBASE_EMAIL) {
-            const userDoc = await db.collection('users').doc(user.uid).get();
-            if (userDoc.exists && userDoc.data().role === 'admin') {
-                loginView.classList.add('hidden');
-                adminDashboard.classList.remove('hidden');
-                loadPegawai(); 
-            } else {
-                auth.signOut();
-            }
-        } else {
-            loginView.classList.remove('hidden');
-            adminDashboard.classList.add('hidden');
-        }
+    // --- BAGIAN OTENTIKASI (LOGIN) DIMATIKAN SEMENTARA ---
+    /* auth.onAuthStateChanged(async user => {
+        // Seluruh blok kode login sekarang tidak aktif
     });
+    */
 
-    // Event listener untuk tombol login baru
-    adminLoginButton.addEventListener('click', () => {
-        const inputPassword = prompt("Silakan masukkan password admin:");
-        if (inputPassword === POPUP_PASSWORD) {
-            // Jika password pop-up benar, login ke Firebase secara otomatis
-            auth.signInWithEmailAndPassword(ADMIN_FIREBASE_EMAIL, ADMIN_FIREBASE_PASSWORD)
-                .catch(err => {
-                    alert("Gagal login ke Firebase. Pastikan akun admin sudah dibuat. Error: " + err.message);
-                });
-        } else if (inputPassword !== null) { // User memasukkan sesuatu tapi salah
-            alert("Password yang Anda masukkan salah.");
-        }
+    // --- LOGIKA TANPA LOGIN (UNTUK PENGEMBANGAN) ---
+    // Langsung jalankan fungsi untuk memuat data pegawai saat halaman dibuka
+    document.addEventListener('DOMContentLoaded', (event) => {
+        loadPegawai();
     });
-
-    document.getElementById('logout-button').addEventListener('click', () => auth.signOut());
+    //-------------------------------------------------------
 
     function showTab(tabName) {
         document.getElementById('pegawai-tab').classList.add('hidden');
