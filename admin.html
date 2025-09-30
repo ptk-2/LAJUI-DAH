@@ -6,128 +6,48 @@
     <title>LAJUI DAH - Dasbor Admin</title>
     <style>
         :root {
-            --primary-color: #4A90E2;
-            --primary-hover: #357ABD;
-            --danger-color: #D0021B;
-            --danger-hover: #B00216;
-            --edit-color: #F5A623;
-            --edit-hover: #D58F1D;
-            --light-gray: #f7f8fa;
-            --gray-border: #dfe1e5;
-            --text-color: #333;
-            --text-secondary: #666;
-            --bg-color: #f0f2f5;
-            --white: #ffffff;
+            --primary-color: #4A90E2; --primary-hover: #357ABD; --danger-color: #D0021B; --danger-hover: #B00216;
+            --edit-color: #F5A623; --edit-hover: #D58F1D; --light-gray: #f7f8fa; --gray-border: #dfe1e5;
+            --text-color: #333; --text-secondary: #666; --bg-color: #f0f2f5; --white: #ffffff;
             --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            margin: 0;
-            padding: 20px;
-            color: var(--text-color);
-        }
-
-        #container {
-            width: 100%;
-            max-width: 1200px;
-            margin: auto;
-            background-color: var(--white);
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: var(--shadow);
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-            border-bottom: 1px solid var(--gray-border);
-            padding-bottom: 20px;
-        }
-
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; color: var(--text-color); }
+        #container { width: 100%; max-width: 1200px; margin: auto; background-color: var(--white); padding: 30px; border-radius: 12px; box-shadow: var(--shadow); }
+        header { text-align: center; margin-bottom: 30px; border-bottom: 1px solid var(--gray-border); padding-bottom: 20px; }
         h2 { font-size: 28px; margin: 0; }
-        h3 { font-size: 22px; color: var(--primary-color); border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; margin-top: 40px;}
-
-        button, a.button-style, label.button-style {
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            border: none;
-            transition: background-color 0.2s, box-shadow 0.2s;
-            text-decoration: none;
-            display: inline-block;
-            text-align: center;
-            color: var(--white);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        h3 { font-size: 22px; color: var(--primary-color); border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; margin-top: 40px; }
+        button, label.button-style {
+            padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer;
+            border: none; transition: background-color 0.2s, box-shadow 0.2s; text-decoration: none;
+            display: inline-block; text-align: center; color: var(--white); box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-
         .primary-btn { background-color: var(--primary-color); }
         .primary-btn:hover { background-color: var(--primary-hover); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
-
-        .bulk-actions {
-            background-color: var(--light-gray);
-            border: 1px solid var(--gray-border);
-            padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
+        .bulk-actions { background-color: var(--light-gray); border: 1px solid var(--gray-border); padding: 20px; margin-bottom: 20px; border-radius: 8px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
         .bulk-actions p { margin: 0; flex-grow: 1; font-size: 14px; color: var(--text-secondary); }
-        .bulk-actions a, .bulk-actions label, .bulk-actions button { margin-bottom: 0; width: auto; }
-        
+        .bulk-actions label, .bulk-actions button { margin-bottom: 0; width: auto; }
         #toggle-manual-form-btn { background-color: var(--edit-color); }
         #toggle-manual-form-btn:hover { background-color: var(--edit-hover); }
-
         #upload-excel-label { background-color: #28a745; }
         #upload-excel-label:hover { background-color: #218838; }
-
         input[type="file"] { display: none; }
-
-        #manual-input-area {
-            background-color: var(--light-gray);
-            border: 1px solid var(--gray-border);
-            padding: 25px;
-            border-radius: 8px;
-            margin-top: 20px;
-        }
-
-        #pegawai-form {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-        }
-
-        #pegawai-form input, #pegawai-form select {
-            width: 100%; padding: 10px; border: 1px solid var(--gray-border); border-radius: 6px; font-size: 14px;
-        }
-        
+        #manual-input-area { background-color: var(--light-gray); border: 1px solid var(--gray-border); padding: 25px; border-radius: 8px; margin-top: 20px; }
+        #pegawai-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        #pegawai-form input, #pegawai-form select { width: 100%; padding: 10px; border: 1px solid var(--gray-border); border-radius: 6px; font-size: 14px; }
         .form-actions { grid-column: 1 / -1; display: flex; gap: 10px; }
         .form-actions button { width: auto; flex-grow: 1; }
         .cancel-button { background-color: var(--text-secondary); }
         .cancel-button:hover { background-color: #555; }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { padding: 12px 15px; border-bottom: 1px solid var(--gray-border); text-align: left; font-size: 14px; }
         thead tr { background-color: var(--light-gray); }
         th { font-weight: bold; }
         tbody tr:hover { background-color: #e9ecef; }
-
         .action-buttons button { width: auto; padding: 6px 12px; font-size: 14px; margin-right: 5px; color: white; display: inline-flex; align-items: center; gap: 5px; }
         .edit-btn { background-color: var(--edit-color); }
         .edit-btn:hover { background-color: var(--edit-hover); }
         .delete-btn { background-color: var(--danger-color); }
         .delete-btn:hover { background-color: var(--danger-hover); }
-
         .hidden { display: none; }
     </style>
 </head>
@@ -142,8 +62,8 @@
     <main>
         <h3>Database Pegawai</h3>
         <div class="bulk-actions">
-            <p>Gunakan template untuk menambah banyak data sekaligus atau input satu per satu.</p>
-            <a href="Template_Pegawai.xlsx" download class="button-style primary-btn">Download Template</a>
+            <p>Gunakan template untuk menambah banyak data pegawai sekaligus atau input satu per satu.</p>
+            <button id="download-template-btn" class="primary-btn">Download Template</button>
             <label for="upload-excel" id="upload-excel-label" class="button-style">Upload Excel</label>
             <input type="file" id="upload-excel" accept=".xlsx, .xls">
             <button id="toggle-manual-form-btn">Input Manual</button>
@@ -175,15 +95,7 @@
         <table>
             <thead>
                 <tr>
-                    <th>No</th>
-                    <th>Nama</th>
-                    <th>NIP</th>
-                    <th>L/P</th>
-                    <th>Unit Kerja</th>
-                    <th>Kecamatan</th>
-                    <th>Jabatan</th>
-                    <th>Golongan</th>
-                    <th>Aksi</th>
+                    <th>No</th><th>Nama</th><th>NIP</th><th>L/P</th><th>Unit Kerja</th><th>Kecamatan</th><th>Jabatan</th><th>Golongan</th><th>Aksi</th>
                 </tr>
             </thead>
             <tbody id="pegawai-list"></tbody>
@@ -213,21 +125,37 @@
     const manualInputArea = document.getElementById('manual-input-area');
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
     const uploadExcelInput = document.getElementById('upload-excel');
+    const downloadTemplateBtn = document.getElementById('download-template-btn');
 
     document.addEventListener('DOMContentLoaded', () => { loadPegawai(); });
-    
-    // Logika untuk menampilkan/menyembunyikan form input manual
-    toggleManualFormBtn.addEventListener('click', () => {
-        manualInputArea.classList.toggle('hidden');
-    });
 
+    toggleManualFormBtn.addEventListener('click', () => { manualInputArea.classList.toggle('hidden'); });
     cancelEditBtn.addEventListener('click', () => {
         manualInputArea.classList.add('hidden');
         pegawaiForm.reset();
         document.getElementById('pegawai-id').value = '';
     });
 
-    // --- UPLOAD EXCEL ---
+    // --- FUNGSI BARU: MEMBUAT DAN MENGUNDUH TEMPLATE EXCEL ---
+    downloadTemplateBtn.addEventListener('click', () => {
+        // 1. Tentukan header kolom yang dibutuhkan
+        const headers = [[
+            "nama", "nip", "lp", "unitKerja", "npsnSekolah", 
+            "kecamatan", "noHp", "jabatan", "golongan"
+        ]];
+
+        // 2. Buat worksheet baru dari array header
+        const worksheet = XLSX.utils.aoa_to_sheet(headers);
+        
+        // 3. Buat workbook baru dan tambahkan worksheet ke dalamnya
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Template Data Pegawai");
+
+        // 4. Minta browser untuk men-download file excel yang dibuat
+        XLSX.writeFile(workbook, "Template_Pegawai.xlsx");
+    });
+
+    // --- FUNGSI UPLOAD EXCEL (Tidak berubah) ---
     uploadExcelInput.addEventListener('change', (event) => {
         const file = event.target.files[0];
         if (!file) return;
@@ -242,15 +170,10 @@
                 jsonData.forEach(row => {
                     const docRef = db.collection('pegawai').doc();
                     batch.set(docRef, {
-                        nama: row.nama || '',
-                        nip: String(row.nip || ''),
-                        lp: row.lp || '',
-                        unitKerja: row.unitKerja || '',
-                        npsnSekolah: String(row.npsnSekolah || ''),
-                        kecamatan: row.kecamatan || '',
-                        noHp: String(row.noHp || ''),
-                        jabatan: row.jabatan || '',
-                        golongan: row.golongan || ''
+                        nama: row.nama || '', nip: String(row.nip || ''), lp: row.lp || '',
+                        unitKerja: row.unitKerja || '', npsnSekolah: String(row.npsnSekolah || ''),
+                        kecamatan: row.kecamatan || '', noHp: String(row.noHp || ''),
+                        jabatan: row.jabatan || '', golongan: row.golongan || ''
                     });
                 });
                 await batch.commit();
@@ -265,7 +188,7 @@
         event.target.value = '';
     });
 
-    // --- CRUD MANUAL ---
+    // --- CRUD MANUAL (Fungsi lainnya tidak berubah) ---
     async function loadPegawai() {
         pegawaiList.innerHTML = '<tr><td colspan="9" style="text-align: center;">Memuat data...</td></tr>';
         const snapshot = await db.collection('pegawai').orderBy('nama').get();
@@ -277,22 +200,17 @@
         let counter = 1;
         snapshot.forEach(doc => {
             const pegawai = doc.data();
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${counter++}</td>
-                <td>${pegawai.nama}</td>
-                <td>${pegawai.nip}</td>
-                <td>${pegawai.lp}</td>
-                <td>${pegawai.unitKerja}</td>
-                <td>${pegawai.kecamatan}</td>
-                <td>${pegawai.jabatan}</td>
-                <td>${pegawai.golongan}</td>
-                <td class="action-buttons">
-                    <button class="edit-btn" onclick="editPegawai('${doc.id}')">✏️ Edit</button>
-                    <button class="delete-btn" onclick="deletePegawai('${doc.id}')">🗑️ Hapus</button>
-                </td>
+            pegawaiList.innerHTML += `
+                <tr>
+                    <td>${counter++}</td> <td>${pegawai.nama}</td> <td>${pegawai.nip}</td>
+                    <td>${pegawai.lp}</td> <td>${pegawai.unitKerja}</td> <td>${pegawai.kecamatan}</td>
+                    <td>${pegawai.jabatan}</td> <td>${pegawai.golongan}</td>
+                    <td class="action-buttons">
+                        <button class="edit-btn" onclick="editPegawai('${doc.id}')">✏️ Edit</button>
+                        <button class="delete-btn" onclick="deletePegawai('${doc.id}')">🗑️ Hapus</button>
+                    </td>
+                </tr>
             `;
-            pegawaiList.appendChild(tr);
         });
     }
 
@@ -300,14 +218,10 @@
         e.preventDefault();
         const id = document.getElementById('pegawai-id').value;
         const data = {
-            nama: document.getElementById('nama').value,
-            nip: document.getElementById('nip').value,
-            lp: document.getElementById('lp').value,
-            unitKerja: document.getElementById('unitKerja').value,
-            npsnSekolah: document.getElementById('npsnSekolah').value,
-            kecamatan: document.getElementById('kecamatan').value,
-            noHp: document.getElementById('noHp').value,
-            jabatan: document.getElementById('jabatan').value,
+            nama: document.getElementById('nama').value, nip: document.getElementById('nip').value,
+            lp: document.getElementById('lp').value, unitKerja: document.getElementById('unitKerja').value,
+            npsnSekolah: document.getElementById('npsnSekolah').value, kecamatan: document.getElementById('kecamatan').value,
+            noHp: document.getElementById('noHp').value, jabatan: document.getElementById('jabatan').value,
             golongan: document.getElementById('golongan').value,
         };
         try {
@@ -339,7 +253,6 @@
             document.getElementById('noHp').value = data.noHp;
             document.getElementById('jabatan').value = data.jabatan;
             document.getElementById('golongan').value = data.golongan;
-            
             manualInputArea.classList.remove('hidden');
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
