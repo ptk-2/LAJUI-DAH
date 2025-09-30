@@ -3,85 +3,196 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LAJUI DAH - Halaman Admin (Development)</title>
+    <title>LAJUI DAH - Dasbor Admin</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; color: #333; }
-        #container { width: 100%; max-width: 1000px; margin: auto; background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        h1, h2, h3 { color: #1c1e21; text-align: center; }
-        input, select, button, a.button-style { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 16px; text-decoration: none; display: inline-block; text-align: center; }
-        button, a.button-style { background-color: #1877f2; color: white; font-weight: bold; cursor: pointer; border: none; }
-        button:hover, a.button-style:hover { background-color: #166fe5; }
-        .cancel-button { background-color: #fa3e3e; }
-        .cancel-button:hover { background-color: #e03030; }
-        .tab-buttons { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
-        .tab-button { background: none; border: none; padding: 15px; font-size: 16px; cursor: pointer; color: #606770; border-bottom: 2px solid transparent; }
-        .tab-button.active { color: #1877f2; border-bottom-color: #1877f2; font-weight: bold; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
-        th { background-color: #f7f8fa; }
-        .action-buttons button { width: auto; padding: 6px 12px; font-size: 14px; margin-right: 5px; }
-        .edit-btn { background-color: #f7b924; }
-        .delete-btn { background-color: #d92550; }
-        .bulk-actions { border: 1px dashed #ccc; padding: 20px; margin-bottom: 20px; border-radius: 6px; display: flex; gap: 15px; align-items: center; }
-        .bulk-actions p { margin: 0; font-size: 14px; color: #606770; flex-grow: 1; text-align: left; }
-        .bulk-actions a, .bulk-actions label { margin-bottom: 0; width: auto; }
-        label.button-style { background-color: #42b72a; }
-        label.button-style:hover { background-color: #36a420; }
+        :root {
+            --primary-color: #4A90E2;
+            --primary-hover: #357ABD;
+            --danger-color: #D0021B;
+            --danger-hover: #B00216;
+            --edit-color: #F5A623;
+            --edit-hover: #D58F1D;
+            --light-gray: #f7f8fa;
+            --gray-border: #dfe1e5;
+            --text-color: #333;
+            --text-secondary: #666;
+            --bg-color: #f0f2f5;
+            --white: #ffffff;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            color: var(--text-color);
+        }
+
+        #container {
+            width: 100%;
+            max-width: 1200px;
+            margin: auto;
+            background-color: var(--white);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--gray-border);
+            padding-bottom: 20px;
+        }
+
+        h2 { font-size: 28px; margin: 0; }
+        h3 { font-size: 22px; color: var(--primary-color); border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; margin-top: 40px;}
+
+        button, a.button-style, label.button-style {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            color: var(--white);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .primary-btn { background-color: var(--primary-color); }
+        .primary-btn:hover { background-color: var(--primary-hover); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+
+        .bulk-actions {
+            background-color: var(--light-gray);
+            border: 1px solid var(--gray-border);
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .bulk-actions p { margin: 0; flex-grow: 1; font-size: 14px; color: var(--text-secondary); }
+        .bulk-actions a, .bulk-actions label, .bulk-actions button { margin-bottom: 0; width: auto; }
+        
+        #toggle-manual-form-btn { background-color: var(--edit-color); }
+        #toggle-manual-form-btn:hover { background-color: var(--edit-hover); }
+
+        #upload-excel-label { background-color: #28a745; }
+        #upload-excel-label:hover { background-color: #218838; }
+
         input[type="file"] { display: none; }
+
+        #manual-input-area {
+            background-color: var(--light-gray);
+            border: 1px solid var(--gray-border);
+            padding: 25px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        #pegawai-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        #pegawai-form input, #pegawai-form select {
+            width: 100%; padding: 10px; border: 1px solid var(--gray-border); border-radius: 6px; font-size: 14px;
+        }
+        
+        .form-actions { grid-column: 1 / -1; display: flex; gap: 10px; }
+        .form-actions button { width: auto; flex-grow: 1; }
+        .cancel-button { background-color: var(--text-secondary); }
+        .cancel-button:hover { background-color: #555; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td { padding: 12px 15px; border-bottom: 1px solid var(--gray-border); text-align: left; font-size: 14px; }
+        thead tr { background-color: var(--light-gray); }
+        th { font-weight: bold; }
+        tbody tr:hover { background-color: #e9ecef; }
+
+        .action-buttons button { width: auto; padding: 6px 12px; font-size: 14px; margin-right: 5px; color: white; display: inline-flex; align-items: center; gap: 5px; }
+        .edit-btn { background-color: var(--edit-color); }
+        .edit-btn:hover { background-color: var(--edit-hover); }
+        .delete-btn { background-color: var(--danger-color); }
+        .delete-btn:hover { background-color: var(--danger-hover); }
+
         .hidden { display: none; }
     </style>
 </head>
 <body>
 
 <div id="container">
-    <div id="admin-dashboard">
-        <h2 style="text-align: center;">Dasbor Admin (Mode Pengembangan)</h2>
-        
-        <div class="tab-buttons">
-            <button class="tab-button active" onclick="showTab('pegawai')">Manajemen Pegawai</button>
-            <button class="tab-button" onclick="showTab('pengajuan')">Manajemen Pengajuan</button>
+    <header>
+        <h2>LAJUI DAH</h2>
+        <p style="color: var(--text-secondary); margin: 5px 0 0 0;">Dasbor Admin Manajemen Pegawai</p>
+    </header>
+
+    <main>
+        <h3>Database Pegawai</h3>
+        <div class="bulk-actions">
+            <p>Gunakan template untuk menambah banyak data sekaligus atau input satu per satu.</p>
+            <a href="Template_Pegawai.xlsx" download class="button-style primary-btn">Download Template</a>
+            <label for="upload-excel" id="upload-excel-label" class="button-style">Upload Excel</label>
+            <input type="file" id="upload-excel" accept=".xlsx, .xls">
+            <button id="toggle-manual-form-btn">Input Manual</button>
         </div>
 
-        <div id="pegawai-tab">
-            <div class="bulk-actions">
-                <p>Gunakan template untuk menambah banyak data pegawai sekaligus.</p>
-                <a href="Template_Pegawai.xlsx" download class="button-style">Download Template</a>
-                <label for="upload-excel" class="button-style">Upload File Excel</label>
-                <input type="file" id="upload-excel" accept=".xlsx, .xls">
-            </div>
-
-            <h3>Form Data Pegawai (Manual)</h3>
+        <div id="manual-input-area" class="hidden">
             <form id="pegawai-form">
                 <input type="hidden" id="pegawai-id">
-                <input type="text" id="nama-pegawai" placeholder="Nama Lengkap Pegawai" required>
-                <input type="text" id="nip-pegawai" placeholder="NIP" required>
-                <input type="text" id="pangkat-pegawai" placeholder="Pangkat / Golongan" required>
-                <input type="text" id="jabatan-pegawai" placeholder="Jabatan" required>
-                <input type="text" id="npsn-sekolah" placeholder="NPSN Sekolah" required>
-                <button type="submit">Simpan Data Pegawai</button>
-                <button type="button" class="cancel-button hidden" id="cancel-edit-btn">Batal Edit</button>
+                <input type="text" id="nama" placeholder="Nama Lengkap" required>
+                <input type="number" id="nip" placeholder="NIP" required>
+                <select id="lp" required>
+                    <option value="">-- Pilih L/P --</option>
+                    <option value="L">Laki-laki</option>
+                    <option value="P">Perempuan</option>
+                </select>
+                <input type="text" id="unitKerja" placeholder="Unit Kerja" required>
+                <input type="number" id="npsnSekolah" placeholder="NPSN Sekolah" required>
+                <input type="text" id="kecamatan" placeholder="Kecamatan" required>
+                <input type="number" id="noHp" placeholder="No HP/WA" required>
+                <input type="text" id="jabatan" placeholder="Jabatan" required>
+                <input type="text" id="golongan" placeholder="Golongan" required>
+                <div class="form-actions">
+                    <button type="submit" class="primary-btn">Simpan Data</button>
+                    <button type="button" class="cancel-button" id="cancel-edit-btn">Batal</button>
+                </div>
             </form>
-            <hr style="margin: 30px 0;">
-            <h3>Database Pegawai</h3>
-            <table>
-                <thead>
-                    <tr><th>Nama</th><th>NIP</th><th>Pangkat</th><th>NPSN</th><th>Aksi</th></tr>
-                </thead>
-                <tbody id="pegawai-list"></tbody>
-            </table>
         </div>
-
-        <div id="pengajuan-tab" class="hidden">
-            <h3>Daftar Pengajuan Masuk</h3>
-            <div id="daftar-pengajuan"></div>
-        </div>
-    </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Nama</th>
+                    <th>NIP</th>
+                    <th>L/P</th>
+                    <th>Unit Kerja</th>
+                    <th>Kecamatan</th>
+                    <th>Jabatan</th>
+                    <th>Golongan</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="pegawai-list"></tbody>
+        </table>
+    </main>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
 <script>
@@ -96,92 +207,92 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // DOM Elements
     const pegawaiForm = document.getElementById('pegawai-form');
     const pegawaiList = document.getElementById('pegawai-list');
+    const toggleManualFormBtn = document.getElementById('toggle-manual-form-btn');
+    const manualInputArea = document.getElementById('manual-input-area');
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
-    const daftarPengajuanDiv = document.getElementById('daftar-pengajuan');
     const uploadExcelInput = document.getElementById('upload-excel');
 
     document.addEventListener('DOMContentLoaded', () => { loadPegawai(); });
+    
+    // Logika untuk menampilkan/menyembunyikan form input manual
+    toggleManualFormBtn.addEventListener('click', () => {
+        manualInputArea.classList.toggle('hidden');
+    });
 
-    function showTab(tabName) {
-        document.getElementById('pegawai-tab').classList.add('hidden');
-        document.getElementById('pengajuan-tab').classList.add('hidden');
-        document.querySelector('.tab-button.active').classList.remove('active');
-        document.getElementById(`${tabName}-tab`).classList.remove('hidden');
-        document.querySelector(`.tab-button[onclick="showTab('${tabName}')"]`).classList.add('active');
-        if (tabName === 'pengajuan') { loadDaftarPengajuan(); }
-    }
+    cancelEditBtn.addEventListener('click', () => {
+        manualInputArea.classList.add('hidden');
+        pegawaiForm.reset();
+        document.getElementById('pegawai-id').value = '';
+    });
 
-    // --- FUNGSI UPLOAD EXCEL ---
+    // --- UPLOAD EXCEL ---
     uploadExcelInput.addEventListener('change', (event) => {
         const file = event.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = async (e) => {
             try {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+                const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                if (jsonData.length === 0) return alert('File Excel kosong atau format salah.');
 
-                if (jsonData.length === 0) {
-                    alert('File Excel kosong atau formatnya salah.');
-                    return;
-                }
-
-                // Menggunakan Batched Write untuk efisiensi
                 const batch = db.batch();
                 jsonData.forEach(row => {
-                    const docRef = db.collection('pegawai').doc(); // Membuat dokumen baru
+                    const docRef = db.collection('pegawai').doc();
                     batch.set(docRef, {
                         nama: row.nama || '',
-                        nip: String(row.nip || ''), // Pastikan NIP adalah string
-                        pangkat: row.pangkat || '',
+                        nip: String(row.nip || ''),
+                        lp: row.lp || '',
+                        unitKerja: row.unitKerja || '',
+                        npsnSekolah: String(row.npsnSekolah || ''),
+                        kecamatan: row.kecamatan || '',
+                        noHp: String(row.noHp || ''),
                         jabatan: row.jabatan || '',
-                        npsnSekolah: String(row.npsnSekolah || '')
+                        golongan: row.golongan || ''
                     });
                 });
-                
                 await batch.commit();
                 alert(`${jsonData.length} data pegawai berhasil di-upload!`);
-                loadPegawai(); // Muat ulang tabel
-
+                loadPegawai();
             } catch (error) {
-                console.error("Error processing Excel file: ", error);
-                alert("Gagal memproses file Excel. Pastikan format kolom sudah benar (nama, nip, pangkat, jabatan, npsnSekolah).");
+                alert("Gagal memproses file. Pastikan header kolom di Excel sudah benar.");
+                console.error(error);
             }
         };
         reader.readAsArrayBuffer(file);
-        event.target.value = ''; // Reset input file
+        event.target.value = '';
     });
 
-    // --- MANAJEMEN PEGAWAI (CRUD MANUAL) ---
+    // --- CRUD MANUAL ---
     async function loadPegawai() {
-        pegawaiList.innerHTML = '<tr><td colspan="5" style="text-align: center;">Memuat data...</td></tr>';
+        pegawaiList.innerHTML = '<tr><td colspan="9" style="text-align: center;">Memuat data...</td></tr>';
         const snapshot = await db.collection('pegawai').orderBy('nama').get();
         if (snapshot.empty) {
-            pegawaiList.innerHTML = '<tr><td colspan="5" style="text-align: center;">Data pegawai masih kosong.</td></tr>';
+            pegawaiList.innerHTML = '<tr><td colspan="9" style="text-align: center;">Data pegawai masih kosong.</td></tr>';
             return;
         }
         pegawaiList.innerHTML = '';
+        let counter = 1;
         snapshot.forEach(doc => {
             const pegawai = doc.data();
-            pegawaiList.innerHTML += `
-                <tr>
-                    <td>${pegawai.nama}</td>
-                    <td>${pegawai.nip}</td>
-                    <td>${pegawai.pangkat}</td>
-                    <td>${pegawai.npsnSekolah}</td>
-                    <td class="action-buttons">
-                        <button class="edit-btn" onclick="editPegawai('${doc.id}')">Edit</button>
-                        <button class="delete-btn" onclick="deletePegawai('${doc.id}')">Hapus</button>
-                    </td>
-                </tr>
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${counter++}</td>
+                <td>${pegawai.nama}</td>
+                <td>${pegawai.nip}</td>
+                <td>${pegawai.lp}</td>
+                <td>${pegawai.unitKerja}</td>
+                <td>${pegawai.kecamatan}</td>
+                <td>${pegawai.jabatan}</td>
+                <td>${pegawai.golongan}</td>
+                <td class="action-buttons">
+                    <button class="edit-btn" onclick="editPegawai('${doc.id}')">✏️ Edit</button>
+                    <button class="delete-btn" onclick="deletePegawai('${doc.id}')">🗑️ Hapus</button>
+                </td>
             `;
+            pegawaiList.appendChild(tr);
         });
     }
 
@@ -189,11 +300,15 @@
         e.preventDefault();
         const id = document.getElementById('pegawai-id').value;
         const data = {
-            nama: document.getElementById('nama-pegawai').value,
-            nip: document.getElementById('nip-pegawai').value,
-            pangkat: document.getElementById('pangkat-pegawai').value,
-            jabatan: document.getElementById('jabatan-pegawai').value,
-            npsnSekolah: document.getElementById('npsn-sekolah').value,
+            nama: document.getElementById('nama').value,
+            nip: document.getElementById('nip').value,
+            lp: document.getElementById('lp').value,
+            unitKerja: document.getElementById('unitKerja').value,
+            npsnSekolah: document.getElementById('npsnSekolah').value,
+            kecamatan: document.getElementById('kecamatan').value,
+            noHp: document.getElementById('noHp').value,
+            jabatan: document.getElementById('jabatan').value,
+            golongan: document.getElementById('golongan').value,
         };
         try {
             if (id) {
@@ -205,7 +320,7 @@
             }
             pegawaiForm.reset();
             document.getElementById('pegawai-id').value = '';
-            cancelEditBtn.classList.add('hidden');
+            manualInputArea.classList.add('hidden');
             loadPegawai();
         } catch (err) { alert('Error: ' + err.message); }
     });
@@ -215,21 +330,20 @@
         if (doc.exists) {
             const data = doc.data();
             document.getElementById('pegawai-id').value = id;
-            document.getElementById('nama-pegawai').value = data.nama;
-            document.getElementById('nip-pegawai').value = data.nip;
-            document.getElementById('pangkat-pegawai').value = data.pangkat;
-            document.getElementById('jabatan-pegawai').value = data.jabatan;
-            document.getElementById('npsn-sekolah').value = data.npsnSekolah;
-            cancelEditBtn.classList.remove('hidden');
-            window.scrollTo(0, 0);
+            document.getElementById('nama').value = data.nama;
+            document.getElementById('nip').value = data.nip;
+            document.getElementById('lp').value = data.lp;
+            document.getElementById('unitKerja').value = data.unitKerja;
+            document.getElementById('npsnSekolah').value = data.npsnSekolah;
+            document.getElementById('kecamatan').value = data.kecamatan;
+            document.getElementById('noHp').value = data.noHp;
+            document.getElementById('jabatan').value = data.jabatan;
+            document.getElementById('golongan').value = data.golongan;
+            
+            manualInputArea.classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     }
-
-    cancelEditBtn.addEventListener('click', () => {
-        pegawaiForm.reset();
-        document.getElementById('pegawai-id').value = '';
-        cancelEditBtn.classList.add('hidden');
-    });
 
     async function deletePegawai(id) {
         if (confirm('Apakah Anda yakin ingin menghapus data pegawai ini?')) {
@@ -237,15 +351,6 @@
             alert('Data berhasil dihapus.');
             loadPegawai();
         }
-    }
-    
-    // --- MANAJEMEN PENGAJUAN ---
-    async function loadDaftarPengajuan() {
-        // ... (kode ini tidak berubah) ...
-    }
-
-    async function updateStatus(docId, newStatus) {
-        // ... (kode ini tidak berubah) ...
     }
 </script>
 </body>
