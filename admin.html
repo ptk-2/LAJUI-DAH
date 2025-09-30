@@ -25,6 +25,14 @@
         button { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; border: none; transition: background-color 0.2s, box-shadow 0.2s; color: var(--white); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         button:disabled { background-color: #ccc; cursor: not-allowed; box-shadow: none; }
         
+        .bulk-actions { background-color: var(--light-gray); border: 1px solid var(--gray-border); padding: 20px; margin-bottom: 20px; border-radius: 8px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
+        .bulk-actions p { margin: 0; flex-grow: 1; font-size: 14px; color: var(--text-secondary); }
+        .bulk-actions .spacer { flex-grow: 2; }
+        .bulk-actions label, .bulk-actions button { margin-bottom: 0; width: auto; font-size: 14px; font-weight: bold; text-decoration: none; display: inline-block; text-align: center; }
+        
+        .danger-btn { background-color: var(--danger-color); }
+        .danger-btn:hover { background-color: var(--danger-hover); }
+
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { padding: 12px 15px; border-bottom: 1px solid var(--gray-border); text-align: left; font-size: 14px; }
         thead tr { background-color: var(--light-gray); }
@@ -33,24 +41,16 @@
         .action-buttons button {
             width: 38px; height: 38px; padding: 0; margin-right: 5px; color: white;
             display: inline-flex; align-items: center; justify-content: center; border-radius: 50%;
-            border: none; transition: background-color 0.2s, box-shadow 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer;
         }
         .edit-btn { background-color: var(--edit-color); }
         .edit-btn:hover { background-color: var(--edit-hover); }
         .delete-btn { background-color: var(--danger-color); }
         .delete-btn:hover { background-color: var(--danger-hover); }
 
-        #pagination-controls { display: flex; justify-content: center; align-items: center; gap: 20px; margin-top: 25px; }
-        #pagination-controls button { width: auto; }
-        #page-info { font-size: 16px; font-weight: bold; color: var(--text-secondary); }
-
         .hidden { display: none; }
         
         .primary-btn { background-color: var(--primary-color); }
         .primary-btn:hover { background-color: var(--primary-hover); }
-        .bulk-actions { background-color: var(--light-gray); border: 1px solid var(--gray-border); padding: 20px; margin-bottom: 20px; border-radius: 8px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
-        .bulk-actions p { margin: 0; flex-grow: 1; font-size: 14px; color: var(--text-secondary); }
-        .bulk-actions label, .bulk-actions button { margin-bottom: 0; width: auto; font-size: 14px; font-weight: bold; text-decoration: none; display: inline-block; text-align: center; }
         label.button-style { padding: 10px 20px; border-radius: 8px; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         #toggle-manual-form-btn { background-color: var(--edit-color); }
         #toggle-manual-form-btn:hover { background-color: var(--edit-hover); }
@@ -64,6 +64,9 @@
         .form-actions button { width: auto; flex-grow: 1; }
         .cancel-button { background-color: var(--text-secondary); }
         .cancel-button:hover { background-color: #555; }
+        #pagination-controls { display: flex; justify-content: center; align-items: center; gap: 20px; margin-top: 25px; }
+        #pagination-controls button { width: auto; }
+        #page-info { font-size: 16px; font-weight: bold; color: var(--text-secondary); }
         .pengajuan-item { border: 1px solid var(--gray-border); border-radius: 8px; padding: 20px; margin-bottom: 15px; background-color: var(--white); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .pengajuan-item p { margin: 0 0 10px 0; text-align: left; }
         .pengajuan-item strong { color: var(--text-color); }
@@ -86,11 +89,13 @@
         <div id="pegawai-view">
             <h3>Database Pegawai</h3>
             <div class="bulk-actions">
-                <p>Gunakan template untuk menambah banyak data sekaligus atau input satu per satu.</p>
+                <p>Gunakan template atau input manual untuk menambah data.</p>
                 <button id="download-template-btn" class="primary-btn">Download Template</button>
                 <label for="upload-excel" id="upload-excel-label" class="button-style">Upload Excel</label>
-                <input type="file" id="upload-excel" accept=".xlsx, .xls">
+                <input type="file" id="upload-excel" accept=".xlsx, .xls" class="hidden">
                 <button id="toggle-manual-form-btn">Input Manual</button>
+                <div class="spacer"></div>
+                <button id="clear-data-btn" class="danger-btn">Bersihkan Data Pegawai</button>
             </div>
             <div id="manual-input-area" class="hidden">
                 <form id="pegawai-form">
@@ -122,7 +127,6 @@
                 <button id="next-btn" class="primary-btn">Berikutnya</button>
             </div>
         </div>
-
         <div id="pengajuan-view" class="hidden">
             <h3>Daftar Pengajuan Masuk</h3>
             <div id="daftar-pengajuan"><p>Memuat data pengajuan...</p></div>
@@ -147,10 +151,8 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // --- PENGATURAN PAGINATION ---
-    let firstVisible = null;
-    let lastVisible = null;
-    let page = 1;
+    // --- Pagination State ---
+    let firstVisible = null, lastVisible = null, page = 1;
     const documentsPerPage = 50;
     let pageHistory = [null];
 
@@ -159,6 +161,7 @@
     const navPengajuan = document.getElementById('nav-pengajuan');
     const pegawaiView = document.getElementById('pegawai-view');
     const pengajuanView = document.getElementById('pengajuan-view');
+    const clearDataBtn = document.getElementById('clear-data-btn');
     const pegawaiList = document.getElementById('pegawai-list');
     const prevBtn = document.getElementById('prev-btn');
     const nextBtn = document.getElementById('next-btn');
@@ -187,52 +190,73 @@
         navPegawai.classList.remove('active');
         loadDaftarPengajuan();
     });
+    
+    // --- FUNGSI BERSIHKAN DATA ---
+    async function clearAllPegawaiData() {
+        if (!confirm("PERINGATAN: Aksi ini akan MENGHAPUS SEMUA data pegawai dari database. Aksi ini tidak bisa dibatalkan. Lanjutkan?")) return;
+        if (!confirm("APAKAH ANDA BENAR-BENAR YAKIN? Sekali lagi, semua data pegawai akan hilang selamanya.")) return;
+
+        clearDataBtn.disabled = true;
+        clearDataBtn.textContent = 'Menghapus...';
+
+        try {
+            const collectionRef = db.collection('pegawai');
+            let snapshot;
+            do {
+                snapshot = await collectionRef.limit(500).get();
+                if (snapshot.size === 0) break;
+                const batch = db.batch();
+                snapshot.docs.forEach(doc => batch.delete(doc.ref));
+                await batch.commit();
+            } while (snapshot.size > 0);
+            alert("Semua data pegawai telah berhasil dihapus.");
+        } catch (error) {
+            console.error("Gagal membersihkan data:", error);
+            alert("Terjadi kesalahan saat mencoba membersihkan data.");
+        } finally {
+            clearDataBtn.disabled = false;
+            clearDataBtn.textContent = 'Bersihkan Data Pegawai';
+            loadFirstPage();
+        }
+    }
+    clearDataBtn.addEventListener('click', clearAllPegawaiData);
 
     // --- FUNGSI PAGINATION ---
     function loadFirstPage() {
         page = 1;
         pageHistory = [null];
-        const first = db.collection('pegawai').orderBy('nama').limit(documentsPerPage);
-        renderQuery(first);
+        renderQuery(db.collection('pegawai').orderBy('nama').limit(documentsPerPage));
     }
 
     async function loadNextPage() {
         if (!lastVisible) return;
         page++;
         pageHistory.push(firstVisible);
-        const next = db.collection('pegawai').orderBy('nama').startAfter(lastVisible).limit(documentsPerPage);
-        renderQuery(next);
+        renderQuery(db.collection('pegawai').orderBy('nama').startAfter(lastVisible).limit(documentsPerPage));
     }
     
     async function loadPrevPage() {
         if (page <= 1) return;
         page--;
         const prevFirstDoc = pageHistory.pop();
-        let prev;
-        if (prevFirstDoc) {
-             prev = db.collection('pegawai').orderBy('nama').startAfter(prevFirstDoc).limit(documentsPerPage);
-        } else {
-             prev = db.collection('pegawai').orderBy('nama').limit(documentsPerPage);
-        }
-        renderQuery(prev);
+        renderQuery(db.collection('pegawai').orderBy('nama').startAfter(prevFirstDoc).limit(documentsPerPage));
     }
     
     async function renderQuery(query) {
         try {
             pegawaiList.innerHTML = `<tr><td colspan="9" style="text-align: center;">Memuat data...</td></tr>`;
             const snapshot = await query.get();
+            pegawaiList.innerHTML = '';
 
-            if (snapshot.empty && page === 1) {
+            if (snapshot.empty) {
                 pegawaiList.innerHTML = `<tr><td colspan="9" style="text-align: center;">Data pegawai masih kosong.</td></tr>`;
                 nextBtn.disabled = true;
-                prevBtn.disabled = true;
+                prevBtn.disabled = page <= 1;
                 return;
             }
 
             firstVisible = snapshot.docs[0];
             lastVisible = snapshot.docs[snapshot.docs.length - 1];
-
-            pegawaiList.innerHTML = '';
             let counter = (page - 1) * documentsPerPage + 1;
 
             snapshot.forEach(doc => {
@@ -250,13 +274,12 @@
 
             pageInfo.textContent = `Halaman ${page}`;
             prevBtn.disabled = page === 1;
-
             const nextQuery = await db.collection('pegawai').orderBy('nama').startAfter(lastVisible).limit(1).get();
             nextBtn.disabled = nextQuery.empty;
 
         } catch (error) {
             console.error("Gagal memuat data:", error);
-            pegawaiList.innerHTML = `<tr><td colspan="9" style="text-align: center;">Gagal memuat data. Periksa aturan keamanan Firestore.</td></tr>`;
+            pegawaiList.innerHTML = `<tr><td colspan="9" style="text-align: center;">Gagal memuat data.</td></tr>`;
         }
     }
 
