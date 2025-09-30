@@ -195,12 +195,13 @@
     </main>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 
 <script>
+    // Inisialisasi Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyDPUNjOaan-a92NOY9Pz_fHpKyA7tjrJiY",
       authDomain: "lajui-dah.firebaseapp.com",
@@ -211,6 +212,12 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+
+    // Inisialisasi Supabase
+    const SUPABASE_URL = 'https://yghywsrqhgbaryqgdxkv.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnaHl3c3JxaGdiYXJ5cWdkeGt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyNDM3MDgsImV4cCI6MjA3NDgxOTcwOH0.4lPp4zgqoTIFbOXZCtMRkgS8PzNnyDfTg5W0vsdwpR8';
+    const { createClient } = supabase;
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     document.addEventListener('DOMContentLoaded', () => { showView('pegawai-view'); });
 
@@ -595,14 +602,23 @@
         snapshot.forEach(doc => {
             const data = doc.data();
             const tanggal = data.tanggalPengajuan ? data.tanggalPengajuan.toDate().toLocaleDateString('id-ID') : 'N/A';
+            let fileUploadSection = '';
+            if (data.status !== 'Selesai') {
+                fileUploadSection = `
+                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--gray-border);">
+                        <label for="file-${doc.id}" style="font-size: 14px; font-weight: bold; color: var(--text-secondary);">Upload Dokumen Balasan (PDF):</label>
+                        <input type="file" id="file-${doc.id}" accept=".pdf" style="margin-top: 5px; display: block; font-size: 14px;">
+                        <button onclick="uploadAndFinalize('${doc.id}')" style="width:auto; padding: 8px 16px; margin-top: 10px;">Upload & Selesaikan</button>
+                    </div>`;
+            }
             daftarPengajuanDiv.innerHTML += `
             <div class="pengajuan-item">
                 <p><strong>Nama Pemohon:</strong> ${data.namaPemohon || 'N/A'}</p>
                 <p><strong>NIP:</strong> ${data.nipPemohon || 'N/A'}</p>
                 <p><strong>Jenis Layanan:</strong> ${data.jenisLayanan || 'N/A'}</p>
                 <p><strong>Tanggal Pengajuan:</strong> ${tanggal}</p>
-                <p><strong>No. WA:</strong> ${data.nomorWa || 'N/A'}</p>
-                <p><a href="${data.dokumenUrl}" target="_blank" class="primary-btn" style="width:auto; text-decoration:none; padding: 8px 16px;">Lihat Dokumen</a></p>
+                <p><strong>No. WA (untuk dihubungi manual): <span style="font-weight:bold; color: #155724; background-color: #e8f5e9; padding: 2px 6px; border-radius: 4px;">${data.nomorWa || 'N/A'}</span></strong></p>
+                <p><a href="${data.dokumenUrl}" target="_blank" class="primary-btn" style="width:auto; text-decoration:none; padding: 8px 16px;">Lihat Dokumen Pemohon</a></p>
                 <hr style="border:none; border-top:1px solid var(--gray-border); margin: 15px 0;">
                 <p style="display:flex; align-items:center; gap:10px;">
                     <strong>Status:</strong> 
@@ -613,14 +629,49 @@
                         <option value="Ditolak" ${data.status === 'Ditolak' ? 'selected' : ''}>Ditolak</option>
                     </select>
                 </p>
+                ${fileUploadSection}
             </div>`;
         });
+    }
+    
+    async function uploadAndFinalize(docId) {
+        const fileInput = document.getElementById(`file-${docId}`);
+        const file = fileInput.files[0];
+        if (!file) return alert('Pilih file dokumen balasan terlebih dahulu.');
+
+        const button = fileInput.nextElementSibling;
+        button.disabled = true;
+        button.textContent = 'Mengunggah...';
+
+        try {
+            const filePath = `dokumen_balasan/${docId}/${Date.now()}_${file.name}`;
+            const { data, error } = await supabaseClient.storage.from('berkas-lajui-dah').upload(filePath, file);
+            if (error) throw error;
+            
+            const { data: urlData } = supabaseClient.storage.from('berkas-lajui-dah').getPublicUrl(data.path);
+            const downloadURL = urlData.publicUrl;
+
+            await db.collection('pengajuan').doc(docId).update({
+                status: 'Selesai',
+                dokumenUrlBalasan: downloadURL
+            });
+
+            alert('Dokumen balasan berhasil diunggah! Status telah diubah menjadi "Selesai".\n\nSilakan kirim notifikasi WhatsApp ke pemohon secara manual.');
+            loadDaftarPengajuan();
+
+        } catch(error) {
+            console.error('Gagal mengunggah dokumen balasan:', error);
+            alert('Terjadi kesalahan saat mengunggah file.');
+            button.disabled = false;
+            button.textContent = 'Upload & Selesaikan';
+        }
     }
 
     async function updateStatus(docId, newStatus) {
         try {
             await db.collection('pengajuan').doc(docId).update({ status: newStatus });
             alert('Status pengajuan berhasil diperbarui!');
+            loadDaftarPengajuan();
         } catch (err) {
             alert('Gagal memperbarui status: ' + err.message);
         }
