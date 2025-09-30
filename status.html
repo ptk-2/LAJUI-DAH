@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cek Status Pengajuan - LAJUI DAH</title>
+    <style>
+        :root {
+            --primary-color: #4A90E2; --primary-hover: #357ABD; --success-color: #28a745;
+            --light-gray: #f7f8fa; --gray-border: #dfe1e5; --text-color: #333;
+            --text-secondary: #666; --bg-color: #f0f2f5; --white: #ffffff;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+        #container { width: 100%; max-width: 800px; background-color: var(--white); padding: 40px; border-radius: 12px; box-shadow: var(--shadow); }
+        header { text-align: center; margin-bottom: 30px; }
+        h2 { font-size: 28px; margin: 0; color: var(--primary-color); }
+        .input-group { display: flex; gap: 10px; }
+        input, button { width: 100%; padding: 12px; border: 1px solid var(--gray-border); border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        button { background-color: var(--primary-color); color: var(--white); font-weight: bold; cursor: pointer; transition: background-color 0.2s; }
+        button:hover { background-color: var(--primary-hover); }
+        #status-results { margin-top: 30px; }
+        .status-item { border: 1px solid var(--gray-border); border-radius: 8px; padding: 20px; margin-bottom: 15px; }
+        .status-item p { margin: 0 0 10px 0; }
+        .status-badge { padding: 5px 10px; border-radius: 15px; color: white; font-size: 12px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div id="container">
+    <header>
+        <h2>Cek Status Pengajuan Anda</h2>
+        <p style="color: var(--text-secondary);">Masukkan Nomor Induk Pegawai (NIP) Anda untuk melihat riwayat dan status pengajuan.</p>
+    </header>
+    <main>
+        <div class="input-group">
+            <input type="number" id="nip-input" placeholder="Masukkan NIP Anda">
+            <button id="check-status-btn" style="width: 150px;">Cek Status</button>
+        </div>
+        <div id="status-results"></div>
+    </main>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<script>
+    const firebaseConfig = { /* ... Konfigurasi Firebase Anda ... */ };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const checkStatusBtn = document.getElementById('check-status-btn');
+    const nipInput = document.getElementById('nip-input');
+    const statusResultsDiv = document.getElementById('status-results');
+
+    checkStatusBtn.addEventListener('click', async () => {
+        const nip = nipInput.value;
+        if (!nip) return alert('Mohon masukkan NIP.');
+
+        checkStatusBtn.disabled = true;
+        checkStatusBtn.textContent = 'Mencari...';
+        statusResultsDiv.innerHTML = '<p style="text-align:center;">Mencari data pengajuan...</p>';
+
+        try {
+            const snapshot = await db.collection('pengajuan').where('nipPemohon', '==', nip).orderBy('tanggalPengajuan', 'desc').get();
+
+            if (snapshot.empty) {
+                statusResultsDiv.innerHTML = '<p style="text-align:center; color: red;">Tidak ada data pengajuan yang ditemukan untuk NIP tersebut.</p>';
+                return;
+            }
+
+            statusResultsDiv.innerHTML = ''; // Kosongkan hasil sebelumnya
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const tanggal = data.tanggalPengajuan ? data.tanggalPengajuan.toDate().toLocaleDateString('id-ID') : 'N/A';
+                
+                let statusBadge;
+                if(data.status === 'Selesai') statusBadge = `<span class="status-badge" style="background-color: #28a745;">Selesai</span>`;
+                else if(data.status === 'Ditolak') statusBadge = `<span class="status-badge" style="background-color: #D0021B;">Ditolak</span>`;
+                else statusBadge = `<span class="status-badge" style="background-color: #F5A623;">Sedang Diproses</span>`;
+                
+                let downloadButton = '';
+                if(data.status === 'Selesai' && data.dokumenUrlBalasan) {
+                    downloadButton = `<a href="${data.dokumenUrlBalasan}" target="_blank" style="text-decoration: none;"><button style="width:auto; margin-top:10px;">Download Dokumen Selesai</button></a>`;
+                }
+
+                statusResultsDiv.innerHTML += `
+                    <div class="status-item">
+                        <p><strong>Jenis Layanan:</strong> ${data.jenisLayanan || 'N/A'}</p>
+                        <p><strong>Tanggal Pengajuan:</strong> ${tanggal}</p>
+                        <p><strong>Status:</strong> ${statusBadge}</p>
+                        ${downloadButton}
+                    </div>
+                `;
+            });
+
+        } catch (error) {
+            console.error(error);
+            statusResultsDiv.innerHTML = '<p style="text-align:center; color: red;">Terjadi kesalahan saat mengambil data.</p>';
+        } finally {
+            checkStatusBtn.disabled = false;
+            checkStatusBtn.textContent = 'Cek Status';
+        }
+    });
+</script>
+
+</body>
+</html>
