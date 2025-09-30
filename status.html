@@ -17,7 +17,7 @@
         h2 { font-size: 28px; margin: 0; color: var(--primary-color); }
         .input-group { display: flex; gap: 10px; }
         input, button { width: 100%; padding: 12px; border: 1px solid var(--gray-border); border-radius: 8px; font-size: 16px; box-sizing: border-box; }
-        button { background-color: var(--primary-color); color: var(--white); font-weight: bold; cursor: pointer; transition: background-color 0.2s; }
+        button { background-color: var(--primary-color); color: var(--white); font-weight: bold; cursor: pointer; transition: background-color 0.2s; border: none; }
         button:hover { background-color: var(--primary-hover); }
         #status-results { margin-top: 30px; }
         .status-item { border: 1px solid var(--gray-border); border-radius: 8px; padding: 20px; margin-bottom: 15px; }
@@ -44,7 +44,15 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 <script>
-    const firebaseConfig = { /* ... Konfigurasi Firebase Anda ... */ };
+    // [PERBAIKAN] Konfigurasi Firebase lengkap dimasukkan kembali
+    const firebaseConfig = {
+      apiKey: "AIzaSyDPUNjOaan-a92NOY9Pz_fHpKyA7tjrJiY",
+      authDomain: "lajui-dah.firebaseapp.com",
+      projectId: "lajui-dah",
+      storageBucket: "lajui-dah.firebasestorage.app",
+      messagingSenderId: "362479392989",
+      appId: "1:362479392989:web:2916e9d03b607c7413a334"
+    };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
@@ -95,7 +103,7 @@
 
         } catch (error) {
             console.error(error);
-            statusResultsDiv.innerHTML = '<p style="text-align:center; color: red;">Terjadi kesalahan saat mengambil data.</p>';
+            statusResultsDiv.innerHTML = '<p style="text-align:center; color: red;">Terjadi kesalahan. Pastikan Indeks Firestore sudah dibuat.</p>';
         } finally {
             checkStatusBtn.disabled = false;
             checkStatusBtn.textContent = 'Cek Status';
