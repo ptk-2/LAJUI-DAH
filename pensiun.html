@@ -41,7 +41,49 @@
 <div id="container">
     <header><h2>Formulir Usul Pensiun</h2></header>
     <main>
-        </main>
+        <div id="school-check-view">
+            <h4>Langkah 1: Masukkan NPSN Sekolah Anda</h4>
+            <div class="input-group">
+                <input type="number" id="npsn-input" placeholder="Ketik NPSN lalu klik Cek Sekolah">
+                <button id="check-school-btn" style="width: 150px;">Cek Sekolah</button>
+            </div>
+            <div id="school-feedback" class="hidden"></div>
+        </div>
+        <div id="employee-selection-view" class="hidden">
+            <hr>
+            <h4>Langkah 2: Pilih Nama Anda</h4>
+            <div class="form-group"><select id="pegawai-select" required></select></div>
+        </div>
+        <form id="main-form-view" class="hidden">
+            <hr>
+            <h4>Langkah 3: Lengkapi dan Periksa Data Anda</h4>
+            <div class="form-grid">
+                <div class="form-group"><label for="nama-input">Nama Lengkap (Bisa diedit)</label><input id="nama-input" type="text" required></div>
+                <div class="form-group"><label>NIP</label><input id="nip-display" type="text" readonly></div>
+                <div class="form-group"><label>Pangkat / Golongan</label><input id="golongan-display" type="text" readonly></div>
+                <div class="form-group"><label>Jabatan</label><input id="jabatan-display" type="text" readonly></div>
+                <div class="form-group">
+                    <label for="jenis-pensiun">Pilih Jenis Usul Pensiun</label>
+                    <select id="jenis-pensiun" required>
+                        <option value="">-- Pilih Jenis --</option>
+                        <option value="Pensiun Usai Masa Kerja">Pensiun Usai Masa Kerja</option>
+                        <option value="Pensiun Meninggal Dunia">Pensiun Meninggal Dunia</option>
+                    </select>
+                </div>
+                <div class="form-group"><label for="noHp-input">Nomor HP/WA Aktif (Bisa diedit)</label><input id="noHp-input" type="number" required></div>
+            </div>
+            <div class="form-group">
+                <label for="dokumen-pensiun">Upload Berkas Persyaratan (PDF)</label>
+                <p style="font-size: 12px; color: var(--text-secondary); margin: 0;">
+                    <strong>Tips:</strong> Agar proses unggah lebih cepat, kompres (kecilkan ukuran) file PDF Anda terlebih dahulu.
+                </p>
+                <input id="dokumen-pensiun" type="file" accept=".pdf" required>
+            </div>
+            <button id="submit-btn" type="submit">Kirim Pengajuan</button>
+            <div id="progress-container" class="hidden"><div id="progress-bar">0%</div></div>
+            <div id="submit-feedback" class="hidden" style="margin-top: 10px;"></div>
+        </form>
+    </main>
 </div>
 
 <script>
@@ -51,26 +93,39 @@
     const { createClient } = supabase;
     const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
-    // ... (DOM Elements tidak berubah) ...
+    // DOM Elements
+    const checkSchoolBtn = document.getElementById('check-school-btn');
+    const npsnInput = document.getElementById('npsn-input');
+    const schoolFeedback = document.getElementById('school-feedback');
+    const employeeSelectionView = document.getElementById('employee-selection-view');
+    const pegawaiSelect = document.getElementById('pegawai-select');
+    const mainFormView = document.getElementById('main-form-view');
+    const submitBtn = document.getElementById('submit-btn');
+    const submitFeedback = document.getElementById('submit-feedback');
+    const progressContainer = document.getElementById('progress-container');
+    const progressBar = document.getElementById('progress-bar');
+
     let dataPegawai = [];
     let selectedPegawaiId = null;
 
-    // --- TAHAP 1: CEK SEKOLAH (Versi Supabase) ---
+    // --- TAHAP 1: CEK SEKOLAH ---
     checkSchoolBtn.addEventListener('click', async () => {
         const npsn = npsnInput.value;
         if (!npsn) return alert('Mohon masukkan NPSN.');
-        // ... (logika loading tidak berubah) ...
+        checkSchoolBtn.disabled = true;
+        checkSchoolBtn.textContent = 'Mencari...';
+        schoolFeedback.classList.add('hidden');
+        employeeSelectionView.classList.add('hidden');
+        mainFormView.classList.add('hidden');
 
         try {
-            // Cek nama sekolah di tabel 'sekolah'
             const { data: schoolData, error: schoolError } = await supabaseClient
                 .from('sekolah').select('namaSekolah').eq('npsn', npsn).single();
-            if (schoolError || !schoolData) throw new Error('Sekolah dengan NPSN tersebut tidak terdaftar.');
+            if (schoolError) throw new Error('Sekolah dengan NPSN tersebut tidak terdaftar.');
             
             schoolFeedback.textContent = `Sekolah ditemukan: ${schoolData.namaSekolah}`;
             schoolFeedback.className = 'feedback-box success-box';
 
-            // Cari pegawai di tabel 'pegawai'
             const { data: pegawaiData, error: pegawaiError } = await supabaseClient
                 .from('pegawai').select('*').eq('npsnSekolah', npsn).order('nama');
             if (pegawaiError) throw pegawaiError;
@@ -78,51 +133,94 @@
 
             dataPegawai = pegawaiData;
             pegawaiSelect.innerHTML = '<option value="">-- Pilih Nama Anda --</option>';
-            dataPegawai.forEach(p => { /* ... (logika isi dropdown tidak berubah) ... */ });
+            dataPegawai.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p.id;
+                option.textContent = p.nama;
+                pegawaiSelect.appendChild(option);
+            });
             
             employeeSelectionView.classList.remove('hidden');
+
         } catch (error) {
             schoolFeedback.textContent = error.message;
             schoolFeedback.className = 'feedback-box error-box';
         } finally {
-            // ... (logika selesai loading tidak berubah) ...
+            schoolFeedback.classList.remove('hidden');
+            checkSchoolBtn.disabled = false;
+            checkSchoolBtn.textContent = 'Cek Sekolah';
         }
     });
 
-    // --- TAHAP 2: PILIH NAMA & ISI FORM OTOMATIS (Tidak berubah) ---
-    pegawaiSelect.addEventListener('change', () => { /* ... kode tidak berubah ... */ });
+    // --- TAHAP 2: PILIH NAMA & ISI FORM OTOMATIS ---
+    pegawaiSelect.addEventListener('change', () => {
+        selectedPegawaiId = pegawaiSelect.value;
+        if (!selectedPegawaiId) {
+            mainFormView.classList.add('hidden');
+            return;
+        }
+        const pegawai = dataPegawai.find(p => p.id == selectedPegawaiId);
+        if (pegawai) {
+            document.getElementById('nama-input').value = pegawai.nama || '';
+            document.getElementById('nip-display').value = pegawai.nip || '';
+            document.getElementById('golongan-display').value = pegawai.golongan || '';
+            document.getElementById('jabatan-display').value = pegawai.jabatan || '';
+            document.getElementById('noHp-input').value = pegawai.noHp || '';
+            mainFormView.classList.remove('hidden');
+        }
+    });
 
-    // --- TAHAP 3: KIRIM PENGAJUAN (Versi Supabase) ---
+    // --- TAHAP 3: KIRIM PENGAJUAN (via Supabase) ---
     mainFormView.addEventListener('submit', async (e) => {
         e.preventDefault();
-        // ... (validasi & logika loading tidak berubah) ...
-        
-        try {
-            // 1. Upload file ke Supabase Storage (tidak berubah)
-            const filePath = `public/pensiun/${selectedPegawaiId}/${Date.now()}_${file.name}`;
-            const { data: uploadData, error: uploadError } = await supabaseClient.storage.from('berkas-lajui-dah').upload(filePath, file);
-            if (uploadError) throw uploadError;
-            
-            progressBar.style.width = '100%';
-            progressBar.textContent = '100%';
-            submitBtn.textContent = 'Menyimpan Data...';
+        if (!selectedPegawaiId) return alert('Sesi tidak valid, mohon ulangi pencarian.');
+        const file = document.getElementById('dokumen-pensiun').files[0];
+        if (!file) return alert('Mohon unggah berkas persyaratan.');
 
-            const { data: urlData } = supabaseClient.storage.from('berkas-lajui-dah').getPublicUrl(uploadData.path);
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Mengunggah File...';
+        progressContainer.classList.remove('hidden');
+        progressBar.style.width = '0%';
+        progressBar.textContent = '0%';
+        submitFeedback.classList.add('hidden');
+
+        try {
+            const filePath = `public/pensiun/${selectedPegawaiId}/${Date.now()}_${file.name}`;
+            const { data, error } = await supabaseClient.storage.from('berkas-lajui-dah').upload(filePath, file, {
+                onUploadProgress: (event) => {
+                    const progress = Math.round((event.loaded / event.total) * 100);
+                    progressBar.style.width = progress + '%';
+                    progressBar.textContent = progress + '%';
+                }
+            });
+
+            if (error) throw error;
+            
+            submitBtn.textContent = 'Menyimpan Data...';
+            const { data: urlData } = supabaseClient.storage.from('berkas-lajui-dah').getPublicUrl(data.path);
             const downloadURL = urlData.publicUrl;
 
-            // 2. Siapkan data pengajuan baru
-            const pengajuanData = { /* ... (pengumpulan data tidak berubah) ... */ };
-            pengajuanData.jenisLayanan = "Pensiun - " + document.getElementById('jenis-pensiun').value;
+            const pengajuanData = {
+                namaPemohon: document.getElementById('nama-input').value,
+                nipPemohon: document.getElementById('nip-display').value,
+                pangkatGolongan: document.getElementById('golongan-display').value,
+                jabatan: document.getElementById('jabatan-display').value,
+                jenisLayanan: "Pensiun - " + document.getElementById('jenis-pensiun').value,
+                nomorWa: document.getElementById('noHp-input').value,
+                dokumenUrl: downloadURL,
+                status: 'Menunggu Verifikasi',
+            };
 
-            // 3. Siapkan data update untuk tabel pegawai
-            const pegawaiUpdateData = { /* ... (pengumpulan data tidak berubah) ... */ };
-            
-            // 4. Kirim data ke tabel 'pengajuan' dan 'pegawai' di Supabase
             const { error: insertError } = await supabaseClient.from('pengajuan').insert([pengajuanData]);
             if (insertError) throw insertError;
 
+            const pegawaiUpdateData = {
+                nama: document.getElementById('nama-input').value,
+                noHp: document.getElementById('noHp-input').value
+            };
+
             const { error: updateError } = await supabaseClient.from('pegawai').update(pegawaiUpdateData).eq('id', selectedPegawaiId);
-            if (updateError) throw updateError; // Jika update gagal, idealnya pengajuan dibatalkan (transaksi)
+            if (updateError) console.warn("Gagal update data pegawai, tapi pengajuan berhasil:", updateError);
 
             submitFeedback.className = 'feedback-box success-box';
             submitFeedback.textContent = 'Pengajuan berhasil dikirim! Halaman akan dialihkan...';
@@ -130,10 +228,15 @@
             setTimeout(() => window.location.href = 'index.html', 3000);
 
         } catch (error) {
-            // ... (logika error tidak berubah) ...
+            console.error("Error mengirim pengajuan:", error);
+            submitFeedback.className = 'feedback-box error-box';
+            submitFeedback.textContent = 'Gagal mengirim pengajuan. Coba lagi. Error: ' + error.message;
+            submitFeedback.classList.remove('hidden');
+            progressContainer.classList.add('hidden');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Kirim Pengajuan';
         }
     });
 </script>
-
 </body>
 </html>
