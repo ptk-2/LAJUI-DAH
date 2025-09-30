@@ -5,423 +5,150 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LAJUI DAH - Layanan Pengajuan</title>
     <style>
-        /* CSS Reset & Basic Styling */
+        :root {
+            --primary-color: #4A90E2;
+            --primary-hover: #357ABD;
+            --secondary-color: #50E3C2;
+            --secondary-hover: #38C8A8;
+            --light-gray: #f7f8fa;
+            --gray-border: #dfe1e5;
+            --text-color: #333;
+            --text-secondary: #666;
+            --bg-color: #f0f2f5;
+            --white: #ffffff;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f0f2f5;
+            background-color: var(--bg-color);
             margin: 0;
             padding: 20px;
+            color: var(--text-color);
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            color: #333;
         }
-
         #container {
             width: 100%;
-            max-width: 800px;
-            background-color: #ffffff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Styling Form */
-        h1, h2, h3 {
-            color: #1c1e21;
+            max-width: 600px;
+            margin: auto;
+            background-color: var(--white);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
             text-align: center;
-            margin-top: 0;
         }
-
-        p {
-            text-align: center;
-            color: #606770;
+        header h2 {
+            font-size: 32px;
+            margin: 0 0 10px 0;
+            color: var(--primary-color);
         }
-
-        input[type="email"],
-        input[type="password"],
-        input[type="text"],
-        input[type="file"],
-        select {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 15px;
-            border: 1px solid #dddfe2;
-            border-radius: 6px;
-            box-sizing: border-box;
+        header p {
             font-size: 16px;
+            color: var(--text-secondary);
+            margin: 0 0 40px 0;
         }
-
-        button {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 6px;
-            background-color: #1877f2;
-            color: white;
-            font-size: 16px;
+        main {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .main-btn {
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 18px;
             font-weight: bold;
             cursor: pointer;
-            transition: background-color 0.3s;
+            border: none;
+            transition: all 0.2s;
+            color: var(--white);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-
-        button:hover {
-            background-color: #166fe5;
+        .main-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
         }
-
-        #register-button {
-            background-color: #42b72a;
-            margin-top: 10px;
-        }
-
-        #register-button:hover {
-            background-color: #36a420;
-        }
-
-        #logout-button {
-            background-color: #fa3e3e;
+        #btn-pangkat { background-color: var(--primary-color); }
+        #btn-pangkat:hover { background-color: var(--primary-hover); }
+        #btn-pensiun { background-color: var(--secondary-color); }
+        #btn-pensiun:hover { background-color: var(--secondary-hover); }
+        
+        #pensiun-options {
             margin-top: 20px;
-            max-width: 200px;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        
-        #logout-button:hover {
-            background-color: #e03030;
-        }
-
-        /* Styling Tampilan Aplikasi */
-        #app-header {
+            padding-top: 20px;
+            border-top: 1px solid var(--gray-border);
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #dddfe2;
-            margin-bottom: 20px;
+            flex-direction: column;
+            gap: 15px;
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.4s ease, transform 0.4s ease;
         }
-
-        #user-info {
-            font-weight: bold;
+        #pensiun-options.hidden {
+            opacity: 0;
+            transform: translateY(-10px);
+            display: none; /* Dihapus oleh JS, tapi baik untuk fallback */
         }
-
-        /* Styling Daftar Pengajuan */
-        .pengajuan-item {
-            border: 1px solid #dddfe2;
-            border-radius: 6px;
+        .pensiun-choice {
+            background-color: var(--white);
+            color: var(--text-secondary);
+            border: 1px solid var(--gray-border);
             padding: 15px;
-            margin-bottom: 15px;
-            background-color: #f7f8fa;
         }
-
-        .pengajuan-item p {
-            text-align: left;
-            margin: 5px 0;
-        }
-
-        .pengajuan-item strong {
-            color: #1c1e21;
-        }
-        
-        .status-select {
-            display: inline-block;
-            width: auto;
-            margin-left: 10px;
-        }
-        
-        .status-badge {
-            padding: 4px 8px;
-            border-radius: 12px;
-            color: white;
-            font-size: 12px;
-            font-weight: bold;
-        }
-        .status-menunggu { background-color: #f7b924; }
-        .status-diproses { background-color: #3f6ad8; }
-        .status-selesai { background-color: #3ac47d; }
-        .status-ditolak { background-color: #d92550; }
-
-        /* Visibilitas */
-        .hidden {
-            display: none;
+        .pensiun-choice:hover {
+            background-color: var(--light-gray);
+            border-color: var(--secondary-color);
+            color: var(--secondary-hover);
         }
     </style>
 </head>
 <body>
 
-    <div id="container">
-        <div id="login-view">
-            <h1>LAJUI DAH</h1>
-            <p>Layanan Pengajuan Kenaikan Pangkat dan Pensiun Secara Mudah</p>
-            <form id="login-form">
-                <input type="email" id="login-email" placeholder="Email" required>
-                <input type="password" id="login-password" placeholder="Password" required>
-                <button type="submit" id="login-button">Login</button>
-                <button type="button" id="register-button">Daftar Akun Baru</button>
-            </form>
+<div id="container">
+    <header>
+        <h2>LAJUI DAH</h2>
+        <p>Layanan Pengajuan Kenaikan Pangkat dan Pensiun Secara Mudah</p>
+    </header>
+
+    <main>
+        <button id="btn-pangkat" class="main-btn">Usul Kenaikan Pangkat</button>
+        <button id="btn-pensiun" class="main-btn">Usul Pensiun</button>
+
+        <div id="pensiun-options" class="hidden">
+            <button class="main-btn pensiun-choice" data-jenis="masa_kerja">Pensiun Usai Masa Kerja</button>
+            <button class="main-btn pensiun-choice" data-jenis="meninggal_dunia">Pensiun Meninggal Dunia</button>
         </div>
+    </main>
+</div>
 
-        <div id="app-view" class="hidden">
-            <div id="app-header">
-                <span id="user-info"></span>
-                <h2>LAJUI DAH</h2>
-            </div>
-            
-            <div id="pemohon-dashboard" class="hidden">
-                <h3>Buat Pengajuan Baru</h3>
-                <form id="pengajuan-form">
-                    <select id="jenis-layanan" required>
-                        <option value="">-- Pilih Jenis Layanan --</option>
-                        <option value="Kenaikan Pangkat">Kenaikan Pangkat</option>
-                        <option value="Pensiun Masa Kerja">Pensiun Masa Kerja</option>
-                        <option value="Pensiun Meninggal Dunia">Pensiun Meninggal Dunia</option>
-                    </select>
-                    <input type="text" id="nomor-wa" placeholder="Nomor WhatsApp (Contoh: 62812xxxx)" required>
-                    <label for="dokumen">Upload Dokumen Persyaratan (PDF/JPG):</label>
-                    <input type="file" id="dokumen" required>
-                    <button type="submit">Kirim Pengajuan</button>
-                </form>
+<script>
+    // Ambil elemen-elemen yang dibutuhkan dari halaman
+    const btnPangkat = document.getElementById('btn-pangkat');
+    const btnPensiun = document.getElementById('btn-pensiun');
+    const pensiunOptions = document.getElementById('pensiun-options');
+    const pensiunChoices = document.querySelectorAll('.pensiun-choice');
 
-                <hr style="margin: 30px 0;">
+    // 1. Jika tombol "Usul Kenaikan Pangkat" diklik, langsung pindah ke halaman pangkat.html
+    btnPangkat.addEventListener('click', () => {
+        window.location.href = 'pangkat.html';
+    });
 
-                <h3>Riwayat Pengajuan Anda</h3>
-                <div id="riwayat-pengajuan">
-                    <p>Belum ada riwayat pengajuan.</p>
-                </div>
-            </div>
+    // 2. Jika tombol "Usul Pensiun" diklik, tampilkan dua pilihan pensiun
+    btnPensiun.addEventListener('click', () => {
+        pensiunOptions.classList.toggle('hidden');
+    });
 
-            <div id="admin-dashboard" class="hidden">
-                <h3>Daftar Pengajuan Masuk</h3>
-                <div id="daftar-pengajuan">
-                    <p>Tidak ada pengajuan yang masuk.</p>
-                </div>
-            </div>
-
-            <button id="logout-button">Logout</button>
-        </div>
-    </div>
-
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
-
-    <script>
-        // Konfigurasi Firebase Anda
-        const firebaseConfig = {
-            apiKey: "AIzaSyDPUNjOaan-a92NOY9Pz_fHpKyA7tjrJiY",
-            authDomain: "lajui-dah.firebaseapp.com",
-            projectId: "lajui-dah",
-            storageBucket: "lajui-dah.firebasestorage.app",
-            messagingSenderId: "362479392989",
-            appId: "1:362479392989:web:2916e9d03b607c7413a334"
-        };
-
-        // Inisialisasi Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-        const storage = firebase.storage();
-
-        // Referensi Elemen DOM
-        const loginView = document.getElementById('login-view');
-        const appView = document.getElementById('app-view');
-        const pemohonDashboard = document.getElementById('pemohon-dashboard');
-        const adminDashboard = document.getElementById('admin-dashboard');
-        const userInfo = document.getElementById('user-info');
-        
-        const loginForm = document.getElementById('login-form');
-        const loginEmail = document.getElementById('login-email');
-        const loginPassword = document.getElementById('login-password');
-        const registerButton = document.getElementById('register-button');
-        const logoutButton = document.getElementById('logout-button');
-
-        const pengajuanForm = document.getElementById('pengajuan-form');
-        const jenisLayanan = document.getElementById('jenis-layanan');
-        const nomorWa = document.getElementById('nomor-wa');
-        const dokumenFile = document.getElementById('dokumen');
-        
-        const riwayatPengajuanDiv = document.getElementById('riwayat-pengajuan');
-        const daftarPengajuanDiv = document.getElementById('daftar-pengajuan');
-
-        // --- MANAJEMEN OTENTIKASI DAN TAMPILAN ---
-
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                // Pengguna berhasil login
-                loginView.classList.add('hidden');
-                appView.classList.remove('hidden');
-                userInfo.textContent = `Login sebagai: ${user.email}`;
-
-                // Cek peran pengguna (admin atau pemohon)
-                const userDoc = await db.collection('users').doc(user.uid).get();
-                if (userDoc.exists && userDoc.data().role === 'admin') {
-                    pemohonDashboard.classList.add('hidden');
-                    adminDashboard.classList.remove('hidden');
-                    loadDaftarPengajuan();
-                } else {
-                    adminDashboard.classList.add('hidden');
-                    pemohonDashboard.classList.remove('hidden');
-                    loadRiwayatPengajuan(user.uid);
-                }
-            } else {
-                // Pengguna logout
-                loginView.classList.remove('hidden');
-                appView.classList.add('hidden');
-            }
+    // 3. Jika salah satu dari pilihan pensiun diklik, pindah ke halaman pensiun.html
+    pensiunChoices.forEach(button => {
+        button.addEventListener('click', () => {
+            // Ambil jenis pensiun dari atribut 'data-jenis'
+            const jenisPensiun = button.dataset.jenis;
+            // Pindah halaman sambil mengirimkan jenis pensiun sebagai parameter URL
+            window.location.href = `pensiun.html?jenis=${jenisPensiun}`;
         });
+    });
+</script>
 
-        // Event Listener untuk Login
-        loginForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const email = loginEmail.value;
-            const password = loginPassword.value;
-            auth.signInWithEmailAndPassword(email, password)
-                .catch(error => alert(`Login Gagal: ${error.message}`));
-        });
-
-        // Event Listener untuk Registrasi
-        registerButton.addEventListener('click', () => {
-            const email = loginEmail.value;
-            const password = loginPassword.value;
-            if (!email || !password) {
-                alert("Mohon isi email dan password untuk mendaftar.");
-                return;
-            }
-            auth.createUserWithEmailAndPassword(email, password)
-                .then(userCredential => {
-                    // Simpan data pengguna baru dengan peran 'pemohon'
-                    db.collection('users').doc(userCredential.user.uid).set({
-                        email: email,
-                        role: 'pemohon' 
-                        // Tambahkan data lain jika perlu, misal: nama, NIP, dll.
-                    }).then(() => {
-                         alert("Registrasi berhasil! Silakan login.");
-                    });
-                })
-                .catch(error => alert(`Registrasi Gagal: ${error.message}`));
-        });
-
-        // Event Listener untuk Logout
-        logoutButton.addEventListener('click', () => {
-            auth.signOut();
-        });
-
-
-        // --- FUNGSI UNTUK PEMOHON ---
-
-        pengajuanForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const currentUser = auth.currentUser;
-            if (!currentUser) return;
-
-            const file = dokumenFile.files[0];
-            if (!file) {
-                alert("Mohon unggah file dokumen persyaratan.");
-                return;
-            }
-
-            const storageRef = storage.ref(`dokumen/${currentUser.uid}/${Date.now()}_${file.name}`);
-            
-            try {
-                // 1. Upload file ke Firebase Storage
-                const snapshot = await storageRef.put(file);
-                // 2. Dapatkan URL download file
-                const downloadURL = await snapshot.ref.getDownloadURL();
-                
-                // 3. Simpan data pengajuan ke Firestore
-                await db.collection('pengajuan').add({
-                    pemohonId: currentUser.uid,
-                    pemohonEmail: currentUser.email,
-                    jenisLayanan: jenisLayanan.value,
-                    nomorWa: nomorWa.value,
-                    dokumenUrl: downloadURL,
-                    status: 'Menunggu Verifikasi',
-                    tanggalPengajuan: firebase.firestore.FieldValue.serverTimestamp()
-                });
-
-                alert('Pengajuan berhasil dikirim!');
-                pengajuanForm.reset();
-                loadRiwayatPengajuan(currentUser.uid); // Muat ulang riwayat
-
-            } catch (error) {
-                alert(`Error: ${error.message}`);
-            }
-        });
-
-        async function loadRiwayatPengajuan(userId) {
-            const querySnapshot = await db.collection('pengajuan')
-                                           .where('pemohonId', '==', userId)
-                                           .orderBy('tanggalPengajuan', 'desc')
-                                           .get();
-            
-            if (querySnapshot.empty) {
-                riwayatPengajuanDiv.innerHTML = '<p>Belum ada riwayat pengajuan.</p>';
-                return;
-            }
-
-            riwayatPengajuanDiv.innerHTML = '';
-            querySnapshot.forEach(doc => {
-                const data = doc.data();
-                const statusClass = `status-${data.status.toLowerCase().replace(' ', '-')}`;
-                const html = `
-                    <div class="pengajuan-item">
-                        <p><strong>Jenis:</strong> ${data.jenisLayanan}</p>
-                        <p><strong>Tanggal:</strong> ${data.tanggalPengajuan ? data.tanggalPengajuan.toDate().toLocaleDateString('id-ID') : 'N/A'}</p>
-                        <p><strong>Status:</strong> <span class="status-badge ${statusClass}">${data.status}</span></p>
-                        <p><a href="${data.dokumenUrl}" target="_blank">Lihat Dokumen</a></p>
-                    </div>
-                `;
-                riwayatPengajuanDiv.innerHTML += html;
-            });
-        }
-
-        // --- FUNGSI UNTUK ADMIN ---
-        async function loadDaftarPengajuan() {
-            const querySnapshot = await db.collection('pengajuan').orderBy('tanggalPengajuan', 'desc').get();
-
-            if (querySnapshot.empty) {
-                daftarPengajuanDiv.innerHTML = '<p>Tidak ada pengajuan yang masuk.</p>';
-                return;
-            }
-            
-            daftarPengajuanDiv.innerHTML = '';
-            querySnapshot.forEach(doc => {
-                const id = doc.id;
-                const data = doc.data();
-                const statusClass = `status-${data.status.toLowerCase().replace(' ', '-')}`;
-                const html = `
-                    <div class="pengajuan-item">
-                        <p><strong>Pemohon:</strong> ${data.pemohonEmail}</p>
-                        <p><strong>Jenis:</strong> ${data.jenisLayanan}</p>
-                        <p><strong>No. WA:</strong> ${data.nomorWa}</p>
-                        <p><strong>Tanggal:</strong> ${data.tanggalPengajuan ? data.tanggalPengajuan.toDate().toLocaleDateString('id-ID') : 'N/A'}</p>
-                        <p><a href="${data.dokumenUrl}" target="_blank">Lihat Dokumen</a></p>
-                        <p>
-                            <strong>Status:</strong> 
-                            <select class="status-select" onchange="updateStatus('${id}', this.value)">
-                                <option value="Menunggu Verifikasi" ${data.status === 'Menunggu Verifikasi' ? 'selected' : ''}>Menunggu Verifikasi</option>
-                                <option value="Sedang Diproses" ${data.status === 'Sedang Diproses' ? 'selected' : ''}>Sedang Diproses</option>
-                                <option value="Selesai" ${data.status === 'Selesai' ? 'selected' : ''}>Selesai</option>
-                                <option value="Ditolak" ${data.status === 'Ditolak' ? 'selected' : ''}>Ditolak</option>
-                            </select>
-                        </p>
-                    </div>
-                `;
-                daftarPengajuanDiv.innerHTML += html;
-            });
-        }
-        
-        async function updateStatus(docId, newStatus) {
-            try {
-                await db.collection('pengajuan').doc(docId).update({ status: newStatus });
-                alert('Status berhasil diperbarui!');
-                // Tidak perlu load ulang, perubahan status sudah terlihat di select box
-            } catch (error) {
-                alert(`Gagal memperbarui status: ${error.message}`);
-            }
-        }
-    </script>
 </body>
 </html>
