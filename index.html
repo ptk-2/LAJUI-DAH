@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAJUI DAH - Layanan Pengajuan Kenaikan Pangkat dan Pensiun</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Simple transition for hidden elements */
+        .hidden-fade {
+            transition: opacity 0.5s ease-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Container Utama -->
+    <div id="app" class="container mx-auto p-4 md:p-8 max-w-4xl">
+        
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-blue-600">LAJUI DAH</h1>
+            <p class="text-md text-gray-500">Layanan Pengajuan Kenaikan Pangkat dan Pensiun Secara Mudah</p>
+        </header>
+
+        <!-- Bagian Login -->
+        <div id="login-section" class="bg-white p-8 rounded-xl shadow-md">
+            <h2 class="text-2xl font-semibold mb-6 text-center">Selamat Datang</h2>
+            <p class="text-center text-gray-600 mb-6">Silakan login untuk memulai pengajuan.</p>
+            <div class="flex flex-col items-center">
+                <button id="login-google" class="bg-red-500 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-red-600 transition-colors flex items-center w-full md:w-auto justify-center">
+                    <i class="fab fa-google mr-3"></i> Login dengan Google
+                </button>
+                 <p class="text-sm text-gray-400 mt-4">Login mudah dan aman</p>
+            </div>
+        </div>
+
+        <!-- Bagian Dasbor Pengguna (Setelah Login) -->
+        <div id="dashboard-section" class="hidden">
+            <!-- Info Pengguna -->
+            <div class="bg-white p-6 rounded-xl shadow-md mb-8 flex justify-between items-center">
+                <div>
+                    <p class="text-gray-500">Selamat datang,</p>
+                    <p id="user-name" class="font-semibold text-lg"></p>
+                    <p id="user-email" class="text-sm text-gray-400"></p>
+                </div>
+                <button id="logout-button" class="bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Logout</button>
+            </div>
+            
+            <!-- Tombol Aksi -->
+            <div id="action-buttons" class="text-center mb-8">
+                <button id="ajukan-baru-button" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105">
+                    <i class="fas fa-plus-circle mr-2"></i> Buat Pengajuan Baru
+                </button>
+            </div>
+
+            <!-- Bagian Form Pengajuan -->
+            <div id="form-section" class="bg-white p-8 rounded-xl shadow-md hidden">
+                <h3 class="text-xl font-semibold mb-6 border-b pb-4">Formulir Pengajuan</h3>
+                
+                <!-- Pilihan Jenis Layanan -->
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-medium mb-2">Pilih Jenis Layanan</label>
+                    <select id="service-type" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">-- Pilih Layanan --</option>
+                        <option value="kenaikan-pangkat">Usulan Kenaikan Pangkat</option>
+                        <option value="pensiun-normal">Usulan Pensiun (Masa Kerja)</option>
+                        <option value="pensiun-meninggal">Usulan Pensiun (Meninggal Dunia)</option>
+                    </select>
+                </div>
+
+                <!-- Kontainer Form Dinamis -->
+                <form id="submission-form" class="hidden">
+                    <!-- Data Diri Pemohon (Umum) -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label for="nama-pemohon" class="block text-gray-700 font-medium mb-2">Nama Lengkap Pemohon</label>
+                            <input type="text" id="nama-pemohon" class="w-full p-3 border border-gray-300 rounded-lg" required>
+                        </div>
+                        <div>
+                            <label for="nip-pemohon" class="block text-gray-700 font-medium mb-2">NIP</label>
+                            <input type="text" id="nip-pemohon" class="w-full p-3 border border-gray-300 rounded-lg" required>
+                        </div>
+                        <div>
+                            <label for="wa-pemohon" class="block text-gray-700 font-medium mb-2">No. WhatsApp Aktif</label>
+                            <input type="tel" id="wa-pemohon" placeholder="Contoh: 081234567890" class="w-full p-3 border border-gray-300 rounded-lg" required>
+                        </div>
+                    </div>
+
+                    <!-- Kolom Spesifik Berdasarkan Layanan -->
+                    <div id="dynamic-fields"></div>
+
+                    <!-- Unggah Dokumen -->
+                    <div class="mb-6">
+                        <label class="block text-gray-700 font-medium mb-2">Unggah Dokumen Persyaratan (PDF/JPG)</label>
+                        <input type="file" id="document-upload" class="w-full p-2 border border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" multiple required>
+                        <p class="text-xs text-gray-500 mt-2">Anda bisa memilih lebih dari satu file.</p>
+                        <div id="file-list" class="mt-2 text-sm text-gray-600"></div>
+                    </div>
+                    
+                    <div class="flex justify-end gap-4 mt-8">
+                        <button type="button" id="cancel-button" class="bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg hover:bg-gray-400 transition-colors">Batal</button>
+                        <button type="submit" id="submit-form-button" class="bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition-colors">Kirim Pengajuan</button>
+                    </div>
+                     <div id="loading-indicator" class="hidden text-center mt-4">
+                        <i class="fas fa-spinner fa-spin mr-2"></i> Mengirim data...
+                    </div>
+                </form>
+            </div>
+
+            <!-- Riwayat Pengajuan -->
+            <div id="history-section" class="mt-8">
+                <h3 class="text-xl font-semibold mb-4">Riwayat Pengajuan Anda</h3>
+                <div id="submissions-list" class="bg-white p-4 rounded-xl shadow-md">
+                    <!-- Daftar pengajuan akan dimuat di sini -->
+                    <p class="text-gray-500 text-center py-4">Belum ada riwayat pengajuan.</p>
+                </div>
+            </div>
+            
+             <!-- Dasbor Admin (Hanya muncul jika user adalah admin) -->
+            <div id="admin-dashboard" class="hidden mt-12">
+                <h2 class="text-2xl font-bold mb-4 text-center bg-blue-100 text-blue-800 p-4 rounded-lg">Dasbor Admin</h2>
+                <div id="admin-submissions-list" class="bg-white p-4 rounded-xl shadow-md">
+                   <p class="text-gray-500 text-center py-4">Tidak ada pengajuan yang masuk.</p>
+                    <!-- Daftar semua pengajuan dari user akan muncul di sini -->
+                </div>
+            </div>
+
+        </div> <!-- End of Dashboard Section -->
+
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import fungsi yang diperlukan dari Firebase SDK
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, where, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+
+        // Konfigurasi Firebase Anda
+        const firebaseConfig = {
+            apiKey: "AIzaSyDPUNjOaan-a92NOY9Pz_fHpKyA7tjrJiY",
+            authDomain: "lajui-dah.firebaseapp.com",
+            projectId: "lajui-dah",
+            storageBucket: "lajui-dah.firebasestorage.app",
+            messagingSenderId: "362479392989",
+            appId: "1:362479392989:web:2916e9d03b607c7413a334"
+        };
+        
+        // ID Email Admin (Ganti dengan email admin yang sebenarnya)
+        const ADMIN_EMAIL = "admin@lajuidah.com"; // <-- GANTI DENGAN EMAIL ADMIN
+
+        // Inisialisasi Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+        const provider = new GoogleAuthProvider();
+
+        // Variabel Global
+        let currentUser = null;
+
+        // Elemen DOM
+        const loginSection = document.getElementById('login-section');
+        const dashboardSection = document.getElementById('dashboard-section');
+        const loginButton = document.getElementById('login-google');
+        const logoutButton = document.getElementById('logout-button');
+        const userNameEl = document.getElementById('user-name');
+        const userEmailEl = document.getElementById('user-email');
+        const ajukanBaruButton = document.getElementById('ajukan-baru-button');
+        const formSection = document.getElementById('form-section');
+        const submissionForm = document.getElementById('submission-form');
+        const serviceTypeSelect = document.getElementById('service-type');
+        const dynamicFields = document.getElementById('dynamic-fields');
+        const cancelButton = document.getElementById('cancel-button');
+        const historySection = document.getElementById('history-section');
+        const submissionsList = document.getElementById('submissions-list');
+        const adminDashboard = document.getElementById('admin-dashboard');
+        const adminSubmissionsList = document.getElementById('admin-submissions-list');
+        const fileInput = document.getElementById('document-upload');
+        const fileListDiv = document.getElementById('file-list');
+        const loadingIndicator = document.getElementById('loading-indicator');
+
+
+        // --- FUNGSI-FUNGSI ---
+
+        // Fungsi untuk menampilkan/menyembunyikan form
+        function toggleForm(show) {
+            if (show) {
+                formSection.classList.remove('hidden');
+                ajukanBaruButton.classList.add('hidden');
+                historySection.classList.add('hidden');
+            } else {
+                formSection.classList.add('hidden');
+                ajukanBaruButton.classList.remove('hidden');
+                historySection.classList.remove('hidden');
+                submissionForm.reset();
+                dynamicFields.innerHTML = '';
+                fileListDiv.innerHTML = '';
+                submissionForm.classList.add('hidden');
+            }
+        }
+        
+        // Fungsi untuk membuat field form tambahan
+        function createDynamicFields(type) {
+            dynamicFields.innerHTML = ''; // Kosongkan dulu
+            let fields = '';
+            
+            if (type === 'kenaikan-pangkat') {
+                fields = `
+                    <div class="mb-4">
+                        <label for="pangkat-lama" class="block text-gray-700 font-medium mb-2">Pangkat/Golongan Lama</label>
+                        <input type="text" id="pangkat-lama" class="w-full p-3 border border-gray-300 rounded-lg" required>
+                    </div>
+                     <div class="mb-4">
+                        <label for="pangkat-baru" class="block text-gray-700 font-medium mb-2">Pangkat/Golongan Baru yang Diusulkan</label>
+                        <input type="text" id="pangkat-baru" class="w-full p-3 border border-gray-300 rounded-lg" required>
+                    </div>
+                `;
+            } else if (type === 'pensiun-normal') {
+                 fields = `
+                    <div class="mb-4">
+                        <label for="tmt-pensiun" class="block text-gray-700 font-medium mb-2">TMT Pensiun</label>
+                        <input type="date" id="tmt-pensiun" class="w-full p-3 border border-gray-300 rounded-lg" required>
+                    </div>
+                `;
+            } else if (type === 'pensiun-meninggal') {
+                fields = `
+                    <div class="mb-4">
+                        <label for="nama-ahli-waris" class="block text-gray-700 font-medium mb-2">Nama Ahli Waris</label>
+                        <input type="text" id="nama-ahli-waris" class="w-full p-3 border border-gray-300 rounded-lg" required>
+                    </div>
+                     <div class="mb-4">
+                        <label for="tgl-meninggal" class="block text-gray-700 font-medium mb-2">Tanggal Meninggal Dunia</label>
+                        <input type="date" id="tgl-meninggal" class="w-full p-3 border border-gray-300 rounded-lg" required>
+                    </div>
+                `;
+            }
+            
+            dynamicFields.innerHTML = fields;
+            submissionForm.classList.remove('hidden');
+        }
+        
+        // Fungsi untuk menampilkan daftar file yang dipilih
+        function updateFileList() {
+            fileListDiv.innerHTML = '';
+            if (fileInput.files.length > 0) {
+                const list = document.createElement('ul');
+                list.className = 'list-disc list-inside';
+                for (const file of fileInput.files) {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = `${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+                    list.appendChild(listItem);
+                }
+                fileListDiv.appendChild(list);
+            }
+        }
+        
+        // Fungsi untuk upload file ke Storage dan mengembalikan array URL
+        async function uploadFiles(submissionId, files) {
+            const uploadPromises = Array.from(files).map(file => {
+                const storageRef = ref(storage, `submissions/${submissionId}/${file.name}`);
+                return uploadBytes(storageRef, file).then(snapshot => getDownloadURL(snapshot.ref));
+            });
+            return Promise.all(uploadPromises);
+        }
+        
+        // Fungsi untuk menampilkan riwayat pengajuan user
+        function listenUserSubmissions(userId) {
+            const q = query(collection(db, "submissions"), where("userId", "==", userId));
+            onSnapshot(q, (querySnapshot) => {
+                if(querySnapshot.empty){
+                     submissionsList.innerHTML = '<p class="text-gray-500 text-center py-4">Belum ada riwayat pengajuan.</p>';
+                     return;
+                }
+                submissionsList.innerHTML = '';
+                querySnapshot.forEach((doc) => {
+                    const submission = doc.data();
+                    const submissionEl = document.createElement('div');
+                    submissionEl.className = 'border-b last:border-b-0 p-4';
+                    
+                    let statusClass = 'bg-yellow-100 text-yellow-800';
+                    if(submission.status === 'Selesai') statusClass = 'bg-green-100 text-green-800';
+                    if(submission.status === 'Ditolak') statusClass = 'bg-red-100 text-red-800';
+                    
+                    submissionEl.innerHTML = `
+                        <div class="flex flex-col md:flex-row justify-between items-start">
+                            <div>
+                                <p class="font-bold text-lg">${submission.serviceName}</p>
+                                <p class="text-sm text-gray-500">Diajukan pada: ${new Date(submission.createdAt.toDate()).toLocaleString('id-ID')}</p>
+                            </div>
+                            <span class="text-sm font-semibold px-3 py-1 rounded-full mt-2 md:mt-0 ${statusClass}">${submission.status}</span>
+                        </div>
+                         ${submission.adminNote ? `<div class="mt-2 text-sm bg-gray-50 p-3 rounded-lg"><strong>Catatan Admin:</strong> ${submission.adminNote}</div>` : ''}
+                         ${submission.finalDocumentUrl ? `<div class="mt-3"><a href="${submission.finalDocumentUrl}" target="_blank" class="text-blue-600 hover:underline font-semibold"><i class="fas fa-download mr-2"></i> Unduh Dokumen Selesai</a></div>` : ''}
+                    `;
+                    submissionsList.appendChild(submissionEl);
+                });
+            });
+        }
+        
+         // Fungsi untuk Admin: menampilkan semua pengajuan
+        function listenAllSubmissions() {
+            const q = query(collection(db, "submissions"));
+            onSnapshot(q, (snapshot) => {
+                 if(snapshot.empty){
+                     adminSubmissionsList.innerHTML = '<p class="text-gray-500 text-center py-4">Tidak ada pengajuan yang masuk.</p>';
+                     return;
+                }
+                adminSubmissionsList.innerHTML = '';
+                 snapshot.forEach(doc => {
+                    const submission = doc.data();
+                    const el = document.createElement('div');
+                    el.className = 'border rounded-lg p-4 mb-4';
+                    
+                    let uploadedFilesHtml = submission.documentUrls.map(url => `
+                        <a href="${url}" target="_blank" class="text-blue-500 hover:underline block text-sm"><i class="fas fa-file-alt mr-1"></i> ${decodeURIComponent(url.split('%2F').pop().split('?')[0])}</a>
+                    `).join('');
+
+                    el.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <p class="font-bold">${submission.serviceName}</p>
+                            <p class="text-sm font-semibold">${submission.status}</p>
+                        </div>
+                        <p class="text-sm text-gray-600">${submission.applicantName} (${submission.applicantNip})</p>
+                        <p class="text-sm text-gray-500">WA: ${submission.applicantWa}</p>
+                        <div class="mt-4 bg-gray-50 p-3 rounded">
+                            <p class="font-semibold text-sm mb-2">Dokumen Pemohon:</p>
+                            ${uploadedFilesHtml}
+                        </div>
+                        <div class="mt-4">
+                            ${submission.status === 'Diproses' ? `
+                                <h4 class="font-semibold text-sm mb-2">Aksi Admin:</h4>
+                                <input type="file" id="final-doc-${doc.id}" class="w-full text-sm mb-2">
+                                <textarea id="note-${doc.id}" placeholder="Catatan untuk pemohon (opsional)" class="w-full p-2 border rounded-lg text-sm"></textarea>
+                                <button data-id="${doc.id}" class="complete-btn bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600">Selesaikan</button>
+                                <button data-id="${doc.id}" class="reject-btn bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600">Tolak</button>
+                            ` : `
+                                <p class="text-sm text-gray-500">Telah diselesaikan pada ${submission.completedAt ? new Date(submission.completedAt.toDate()).toLocaleString('id-ID') : ''}</p>
+                                ${submission.finalDocumentUrl ? `<a href="${submission.finalDocumentUrl}" target="_blank" class="text-blue-600 hover:underline font-semibold text-sm"><i class="fas fa-check-circle mr-1"></i> Lihat Dokumen Selesai</a>` : ''}
+                            `}
+                        </div>
+                    `;
+                    adminSubmissionsList.appendChild(el);
+                 });
+            });
+        }
+        
+        // Fungsi untuk menyelesaikan pengajuan (Admin)
+        async function completeSubmission(submissionId) {
+            const finalDocFile = document.getElementById(`final-doc-${submissionId}`).files[0];
+            const adminNote = document.getElementById(`note-${submissionId}`).value;
+
+            if(!finalDocFile) {
+                alert('Silakan unggah dokumen balasan terlebih dahulu!');
+                return;
+            }
+
+            try {
+                // 1. Upload dokumen balasan
+                const finalDocRef = ref(storage, `final_documents/${submissionId}/${finalDocFile.name}`);
+                await uploadBytes(finalDocRef, finalDocFile);
+                const finalDocumentUrl = await getDownloadURL(finalDocRef);
+
+                // 2. Update status di Firestore
+                const docRef = doc(db, 'submissions', submissionId);
+                await updateDoc(docRef, {
+                    status: 'Selesai',
+                    adminNote: adminNote,
+                    finalDocumentUrl: finalDocumentUrl,
+                    completedAt: new Date()
+                });
+
+                alert('Pengajuan berhasil diselesaikan! Notifikasi akan dikirim ke pemohon.');
+                // Di sini idealnya memanggil cloud function untuk kirim WA
+            } catch (error) {
+                console.error("Error completing submission: ", error);
+                alert('Gagal menyelesaikan pengajuan.');
+            }
+        }
+        
+         // Fungsi untuk menolak pengajuan (Admin)
+        async function rejectSubmission(submissionId) {
+             const adminNote = document.getElementById(`note-${submissionId}`).value;
+             if(!adminNote) {
+                 alert('Harap isi alasan penolakan pada kolom catatan.');
+                 return;
+             }
+             try {
+                const docRef = doc(db, 'submissions', submissionId);
+                await updateDoc(docRef, {
+                    status: 'Ditolak',
+                    adminNote: adminNote,
+                    completedAt: new Date()
+                });
+                alert('Pengajuan telah ditolak.');
+             } catch(error) {
+                 console.error("Error rejecting submission: ", error);
+                 alert('Gagal menolak pengajuan.');
+             }
+        }
+
+        // --- EVENT LISTENERS ---
+
+        // State Change Auth
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // User logged in
+                currentUser = user;
+                loginSection.classList.add('hidden');
+                dashboardSection.classList.remove('hidden');
+                userNameEl.textContent = user.displayName;
+                userEmailEl.textContent = user.email;
+                
+                // Cek apakah user adalah admin
+                if (user.email === ADMIN_EMAIL) {
+                    adminDashboard.classList.remove('hidden');
+                    listenAllSubmissions();
+                } else {
+                    adminDashboard.classList.add('hidden');
+                }
+                listenUserSubmissions(user.uid);
+
+            } else {
+                // User logged out
+                currentUser = null;
+                loginSection.classList.remove('hidden');
+                dashboardSection.classList.add('hidden');
+            }
+        });
+
+        // Login
+        loginButton.addEventListener('click', () => {
+            signInWithPopup(auth, provider).catch((error) => {
+                console.error("Login failed:", error);
+            });
+        });
+
+        // Logout
+        logoutButton.addEventListener('click', () => {
+            signOut(auth);
+        });
+
+        // Tampilkan form pengajuan
+        ajukanBaruButton.addEventListener('click', () => toggleForm(true));
+
+        // Batalkan pengajuan (tutup form)
+        cancelButton.addEventListener('click', () => toggleForm(false));
+
+        // Ganti jenis layanan
+        serviceTypeSelect.addEventListener('change', (e) => {
+            if (e.target.value) {
+                createDynamicFields(e.target.value);
+            } else {
+                submissionForm.classList.add('hidden');
+                dynamicFields.innerHTML = '';
+            }
+        });
+        
+        // Update file list saat file dipilih
+        fileInput.addEventListener('change', updateFileList);
+
+        // Submit form
+        submissionForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) return alert('Anda harus login untuk mengajukan.');
+            if (fileInput.files.length === 0) return alert('Mohon unggah dokumen persyaratan.');
+            
+            loadingIndicator.classList.remove('hidden');
+
+            const serviceType = serviceTypeSelect.value;
+            const serviceName = serviceTypeSelect.options[serviceTypeSelect.selectedIndex].text;
+            
+            // Kumpulkan data umum
+            let submissionData = {
+                userId: currentUser.uid,
+                userEmail: currentUser.email,
+                serviceName: serviceName,
+                applicantName: document.getElementById('nama-pemohon').value,
+                applicantNip: document.getElementById('nip-pemohon').value,
+                applicantWa: document.getElementById('wa-pemohon').value,
+                status: 'Diproses', // Status awal
+                createdAt: new Date(),
+                documentUrls: []
+            };
+            
+            // Kumpulkan data dinamis
+            if (serviceType === 'kenaikan-pangkat') {
+                submissionData.pangkatLama = document.getElementById('pangkat-lama').value;
+                submissionData.pangkatBaru = document.getElementById('pangkat-baru').value;
+            } else if (serviceType === 'pensiun-normal') {
+                submissionData.tmtPensiun = document.getElementById('tmt-pensiun').value;
+            } else if (serviceType === 'pensiun-meninggal') {
+                submissionData.ahliWaris = document.getElementById('nama-ahli-waris').value;
+                submissionData.tglMeninggal = document.getElementById('tgl-meninggal').value;
+            }
+            
+            try {
+                // 1. Tambahkan dokumen ke Firestore untuk mendapatkan ID unik
+                const docRef = await addDoc(collection(db, "submissions"), submissionData);
+                
+                // 2. Upload file ke Storage menggunakan ID tersebut
+                const fileUrls = await uploadFiles(docRef.id, fileInput.files);
+                
+                // 3. Update dokumen di Firestore dengan URL file
+                await updateDoc(docRef, {
+                    documentUrls: fileUrls
+                });
+                
+                alert('Pengajuan berhasil dikirim!');
+                toggleForm(false);
+            } catch (error) {
+                console.error("Error adding document: ", error);
+                alert('Gagal mengirim pengajuan. Silakan coba lagi.');
+            } finally {
+                 loadingIndicator.classList.add('hidden');
+            }
+        });
+        
+        // Event delegation untuk tombol admin
+        adminSubmissionsList.addEventListener('click', (e) => {
+            const target = e.target;
+            const submissionId = target.getAttribute('data-id');
+            if (target.classList.contains('complete-btn')) {
+                completeSubmission(submissionId);
+            } else if (target.classList.contains('reject-btn')) {
+                rejectSubmission(submissionId);
+            }
+        });
+
+    </script>
+</body>
+</html>
