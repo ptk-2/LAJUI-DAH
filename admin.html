@@ -39,7 +39,7 @@
         tbody tr:hover { background-color: #e9ecef; }
         
         .action-buttons { width: 120px; text-align: center !important; }
-        .action-buttons button { width: 38px; height: 38px; padding: 0; margin-right: 5px; color: white; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; }
+        .action-buttons button { width: 40px; height: 40px; padding: 0; margin-right: 5px; color: white; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; }
         
         .hidden { display: none; }
         
@@ -131,13 +131,16 @@
                 <label for="upload-school-excel" id="upload-school-excel-label" class="button-style">Upload Excel Sekolah</label>
                 <input type="file" id="upload-school-excel" accept=".xlsx, .xls" class="hidden">
                 <button id="toggle-school-form-btn">Input Manual Sekolah</button>
+                <div class="spacer"></div>
+                <button id="clear-school-data-btn" class="danger-btn">Bersihkan Data Sekolah</button>
             </div>
             <div id="manual-school-input-area" class="manual-input-area hidden">
-                <form id="school-form" class="manual-form" style="grid-template-columns: 1fr 1fr;">
+                <form id="school-form" class="manual-form" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
                     <input type="hidden" id="school-id">
                     <input type="number" id="npsn-sekolah-input" placeholder="NPSN" required>
                     <input type="text" id="nama-sekolah-input" placeholder="Nama Sekolah" required>
-                    <div class="form-actions">
+                    <input type="text" id="kecamatan-sekolah-input" placeholder="Kecamatan" required>
+                    <div class="form-actions" style="grid-column: 1 / -1;">
                         <button type="submit" class="primary-btn">Simpan Sekolah</button>
                         <button type="button" class="cancel-button" id="cancel-school-edit-btn">Batal</button>
                     </div>
@@ -145,7 +148,7 @@
             </div>
             <table>
                 <thead>
-                    <tr><th>No</th><th>NPSN</th><th>Nama Sekolah</th><th>Aksi</th></tr>
+                    <tr><th>No</th><th>NPSN</th><th>Nama Sekolah</th><th>Kecamatan</th><th>Aksi</th></tr>
                 </thead>
                 <tbody id="sekolah-list"></tbody>
             </table>
@@ -180,9 +183,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    document.addEventListener('DOMContentLoaded', () => { showView('pegawai-view'); });
-
-    // --- NAVIGASI ---
+    // --- DOM Elements ---
     const navPegawai = document.getElementById('nav-pegawai');
     const navSekolah = document.getElementById('nav-sekolah');
     const navPengajuan = document.getElementById('nav-pengajuan');
@@ -190,6 +191,9 @@
     const sekolahView = document.getElementById('sekolah-view');
     const pengajuanView = document.getElementById('pengajuan-view');
 
+    document.addEventListener('DOMContentLoaded', () => { showView('pegawai-view'); });
+
+    // --- NAVIGASI ---
     function showView(viewId) {
         [pegawaiView, sekolahView, pengajuanView].forEach(v => v.classList.add('hidden'));
         [navPegawai, navSekolah, navPengajuan].forEach(n => n.classList.remove('active'));
@@ -205,6 +209,61 @@
     navPegawai.addEventListener('click', () => showView('pegawai-view'));
     navSekolah.addEventListener('click', () => showView('sekolah-view'));
     navPengajuan.addEventListener('click', () => showView('pengajuan-view'));
+    
+    // --- RENDERER GENERIC ---
+    async function renderQuery(query, state, listEl, nextEl, prevEl, pageInfoEl, type) {
+        try {
+            const colspan = type === 'pegawai' ? 9 : 5;
+            listEl.innerHTML = `<tr><td colspan="${colspan}" style="text-align: center;">Memuat data...</td></tr>`;
+            const snapshot = await query.get();
+            listEl.innerHTML = '';
+
+            if (snapshot.empty) {
+                listEl.innerHTML = `<tr><td colspan="${colspan}" style="text-align: center;">Data masih kosong.</td></tr>`;
+                nextEl.disabled = true;
+                prevEl.disabled = state.page <= 1;
+                return;
+            }
+
+            state.firstVisible = snapshot.docs[0];
+            state.lastVisible = snapshot.docs[snapshot.docs.length - 1];
+            let counter = (state.page - 1) * 50 + 1;
+
+            snapshot.forEach(doc => {
+                if (type === 'pegawai') {
+                    const pegawai = doc.data();
+                    listEl.innerHTML += `
+                        <tr>
+                            <td>${counter++}</td><td>${pegawai.nama}</td><td>${pegawai.nip}</td><td>${pegawai.lp}</td>
+                            <td>${pegawai.unitKerja}</td><td>${pegawai.kecamatan}</td><td>${pegawai.jabatan}</td><td>${pegawai.golongan}</td>
+                            <td class="action-buttons">
+                                <button class="edit-btn" title="Edit Data" onclick="editPegawai('${doc.id}')"><i class="material-icons" style="font-size:22px;">edit</i></button>
+                                <button class="delete-btn" title="Hapus Data" onclick="deletePegawai('${doc.id}')"><i class="material-icons" style="font-size:22px;">delete_forever</i></button>
+                            </td>
+                        </tr>`;
+                } else if (type === 'sekolah') {
+                    const sekolah = doc.data();
+                    listEl.innerHTML += `
+                    <tr>
+                        <td>${counter++}</td><td>${sekolah.npsn}</td><td>${sekolah.namaSekolah}</td><td>${sekolah.kecamatan || ''}</td>
+                        <td class="action-buttons">
+                            <button class="edit-btn" title="Edit Data" onclick="editSekolah('${doc.id}')"><i class="material-icons" style="font-size:22px;">edit</i></button>
+                            <button class="delete-btn" title="Hapus Data" onclick="deleteSekolah('${doc.id}')"><i class="material-icons" style="font-size:22px;">delete_forever</i></button>
+                        </td>
+                    </tr>`;
+                }
+            });
+
+            pageInfoEl.textContent = `Halaman ${state.page}`;
+            prevEl.disabled = state.page === 1;
+            const nextQuery = await query.startAfter(state.lastVisible).limit(1).get();
+            nextEl.disabled = nextQuery.empty;
+
+        } catch (error) {
+            console.error(`Gagal memuat data ${type}:`, error);
+            listEl.innerHTML = `<tr><td colspan="${type === 'pegawai' ? 9 : 5}" style="text-align: center;">Gagal memuat data.</td></tr>`;
+        }
+    }
 
     // --- MANAJEMEN PEGAWAI ---
     const pegawaiPaginationState = { firstVisible: null, lastVisible: null, page: 1, history: [null] };
@@ -213,23 +272,60 @@
     const nextBtn = document.getElementById('next-btn');
     const pageInfo = document.getElementById('page-info');
     const clearDataBtn = document.getElementById('clear-data-btn');
+    const downloadTemplateBtn = document.getElementById('download-template-btn');
+    const toggleManualFormBtn = document.getElementById('toggle-manual-form-btn');
+    const manualInputArea = document.getElementById('manual-input-area');
+    const pegawaiForm = document.getElementById('pegawai-form');
+    const cancelEditBtn = document.getElementById('cancel-edit-btn');
+    const uploadExcelInput = document.getElementById('upload-excel');
 
+    downloadTemplateBtn.addEventListener('click', () => {
+        const headers = [["nama", "nip", "lp", "unitKerja", "npsnSekolah", "kecamatan", "noHp", "jabatan", "golongan"]];
+        const worksheet = XLSX.utils.aoa_to_sheet(headers);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Template Data Pegawai");
+        XLSX.writeFile(workbook, "Template_Pegawai.xlsx");
+    });
+    
+    uploadExcelInput.addEventListener('change', async (event) => {
+        const file = event.target.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+                const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                if (jsonData.length === 0) return alert('File Excel kosong.');
+                const batch = db.batch();
+                jsonData.forEach(row => {
+                    const docRef = db.collection('pegawai').doc();
+                    batch.set(docRef, {
+                        nama: row.nama||'', nip: String(row.nip||''), lp: row.lp||'', unitKerja: row.unitKerja||'', npsnSekolah: String(row.npsnSekolah||''),
+                        kecamatan: row.kecamatan||'', noHp: String(row.noHp||''), jabatan: row.jabatan||'', golongan: row.golongan||''
+                    });
+                });
+                await batch.commit();
+                alert(`${jsonData.length} data pegawai berhasil di-upload!`);
+                loadFirstPage();
+            } catch (error) { alert("Gagal memproses file."); }
+        };
+        reader.readAsArrayBuffer(file);
+        event.target.value = '';
+    });
+    
     async function clearAllPegawaiData() {
-        if (!confirm("PERINGATAN: Aksi ini akan MENGHAPUS SEMUA data pegawai. Lanjutkan?")) return;
-        if (!confirm("APAKAH ANDA YAKIN? Data yang dihapus tidak bisa dikembalikan.")) return;
+        if (!confirm("PERINGATAN: Akan menghapus SEMUA data pegawai. Lanjutkan?")) return;
+        if (!confirm("YAKIN? Data tidak bisa dikembalikan.")) return;
         clearDataBtn.disabled = true;
         clearDataBtn.textContent = 'Menghapus...';
         try {
-            const collectionRef = db.collection('pegawai');
-            let snapshot;
+            const collectionRef = db.collection('pegawai'); let snapshot;
             do {
-                snapshot = await collectionRef.limit(500).get();
-                if (snapshot.size === 0) break;
+                snapshot = await collectionRef.limit(500).get(); if (snapshot.size === 0) break;
                 const batch = db.batch();
                 snapshot.docs.forEach(doc => batch.delete(doc.ref));
                 await batch.commit();
             } while (snapshot.size > 0);
-            alert("Semua data pegawai telah berhasil dihapus.");
+            alert("Semua data pegawai telah dihapus.");
         } catch (error) {
             alert("Terjadi kesalahan saat membersihkan data.");
         } finally {
@@ -243,128 +339,265 @@
     function loadFirstPage() {
         pegawaiPaginationState.page = 1;
         pegawaiPaginationState.history = [null];
-        renderQuery(db.collection('pegawai').orderBy('nama').limit(50), pegawaiPaginationState, pegawaiList, nextBtn, prevBtn, pageInfo);
+        renderQuery(db.collection('pegawai').orderBy('nama').limit(50), pegawaiPaginationState, pegawaiList, nextBtn, prevBtn, pageInfo, 'pegawai');
     }
     prevBtn.addEventListener('click', () => {
         if (pegawaiPaginationState.page <= 1) return;
         pegawaiPaginationState.page--;
         const prevDoc = pegawaiPaginationState.history.pop();
-        renderQuery(db.collection('pegawai').orderBy('nama').startAfter(prevDoc).limit(50), pegawaiPaginationState, pegawaiList, nextBtn, prevBtn, pageInfo);
+        renderQuery(db.collection('pegawai').orderBy('nama').startAfter(prevDoc).limit(50), pegawaiPaginationState, pegawaiList, nextBtn, prevBtn, pageInfo, 'pegawai');
     });
     nextBtn.addEventListener('click', () => {
         if (!pegawaiPaginationState.lastVisible) return;
         pegawaiPaginationState.page++;
         pegawaiPaginationState.history.push(pegawaiPaginationState.firstVisible);
-        renderQuery(db.collection('pegawai').orderBy('nama').startAfter(pegawaiPaginationState.lastVisible).limit(50), pegawaiPaginationState, pegawaiList, nextBtn, prevBtn, pageInfo);
+        renderQuery(db.collection('pegawai').orderBy('nama').startAfter(pegawaiPaginationState.lastVisible).limit(50), pegawaiPaginationState, pegawaiList, nextBtn, prevBtn, pageInfo, 'pegawai');
     });
 
-    async function renderQuery(query, state, listEl, nextEl, prevEl, pageInfoEl) {
+    toggleManualFormBtn.addEventListener('click', () => manualInputArea.classList.toggle('hidden'));
+    cancelEditBtn.addEventListener('click', () => {
+        manualInputArea.classList.add('hidden');
+        pegawaiForm.reset();
+        document.getElementById('pegawai-id').value = '';
+    });
+
+    pegawaiForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('pegawai-id').value;
+        const data = {
+            nama: document.getElementById('nama').value, nip: document.getElementById('nip').value, lp: document.getElementById('lp').value,
+            unitKerja: document.getElementById('unitKerja').value, npsnSekolah: document.getElementById('npsnSekolah').value,
+            kecamatan: document.getElementById('kecamatan').value, noHp: document.getElementById('noHp').value,
+            jabatan: document.getElementById('jabatan').value, golongan: document.getElementById('golongan').value,
+        };
         try {
-            listEl.innerHTML = `<tr><td colspan="9" style="text-align: center;">Memuat data...</td></tr>`;
-            const snapshot = await query.get();
-            listEl.innerHTML = '';
-
-            if (snapshot.empty) {
-                listEl.innerHTML = `<tr><td colspan="9" style="text-align: center;">Data masih kosong.</td></tr>`;
-                nextEl.disabled = true;
-                prevEl.disabled = state.page <= 1;
-                return;
+            if (id) {
+                await db.collection('pegawai').doc(id).update(data);
+                alert('Data pegawai berhasil diperbarui!');
+            } else {
+                await db.collection('pegawai').add(data);
+                alert('Data pegawai baru berhasil disimpan!');
             }
+            pegawaiForm.reset();
+            document.getElementById('pegawai-id').value = '';
+            manualInputArea.classList.add('hidden');
+            loadFirstPage();
+        } catch (err) { alert('Error: ' + err.message); }
+    });
 
-            state.firstVisible = snapshot.docs[0];
-            state.lastVisible = snapshot.docs[snapshot.docs.length - 1];
-            let counter = (state.page - 1) * 50 + 1;
-
-            snapshot.forEach(doc => {
-                const pegawai = doc.data();
-                listEl.innerHTML += `
-                    <tr>
-                        <td>${counter++}</td><td>${pegawai.nama}</td><td>${pegawai.nip}</td><td>${pegawai.lp}</td>
-                        <td>${pegawai.unitKerja}</td><td>${pegawai.kecamatan}</td><td>${pegawai.jabatan}</td><td>${pegawai.golongan}</td>
-                        <td class="action-buttons">
-                            <button class="edit-btn" title="Edit Data" onclick="editPegawai('${doc.id}')"><i class="material-icons" style="font-size:20px;">edit</i></button>
-                            <button class="delete-btn" title="Hapus Data" onclick="deletePegawai('${doc.id}')"><i class="material-icons" style="font-size:20px;">delete</i></button>
-                        </td>
-                    </tr>`;
-            });
-
-            pageInfoEl.textContent = `Halaman ${state.page}`;
-            prevEl.disabled = state.page === 1;
-            const nextQuery = await query.startAfter(state.lastVisible).limit(1).get();
-            nextEl.disabled = nextQuery.empty;
-
-        } catch (error) {
-            console.error("Gagal memuat data:", error);
-            listEl.innerHTML = `<tr><td colspan="9" style="text-align: center;">Gagal memuat data.</td></tr>`;
+    async function editPegawai(id) {
+        const doc = await db.collection('pegawai').doc(id).get();
+        if (doc.exists) {
+            const data = doc.data();
+            const form = document.getElementById('pegawai-form');
+            form.querySelector('#pegawai-id').value = id;
+            form.querySelector('#nama').value = data.nama;
+            form.querySelector('#nip').value = data.nip;
+            form.querySelector('#lp').value = data.lp;
+            form.querySelector('#unitKerja').value = data.unitKerja;
+            form.querySelector('#npsnSekolah').value = data.npsnSekolah;
+            form.querySelector('#kecamatan').value = data.kecamatan;
+            form.querySelector('#noHp').value = data.noHp;
+            form.querySelector('#jabatan').value = data.jabatan;
+            form.querySelector('#golongan').value = data.golongan;
+            manualInputArea.classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     }
-    
+
+    async function deletePegawai(id) {
+        if (confirm('Yakin ingin menghapus data pegawai ini?')) {
+            await db.collection('pegawai').doc(id).delete();
+            alert('Data berhasil dihapus.');
+            loadFirstPage();
+        }
+    }
+
     // --- MANAJEMEN SEKOLAH ---
     const sekolahPaginationState = { firstVisible: null, lastVisible: null, page: 1, history: [null] };
     const sekolahList = document.getElementById('sekolah-list');
     const schoolPrevBtn = document.getElementById('school-prev-btn');
     const schoolNextBtn = document.getElementById('school-next-btn');
     const schoolPageInfo = document.getElementById('school-page-info');
+    const clearSchoolDataBtn = document.getElementById('clear-school-data-btn');
+    const downloadSchoolTemplateBtn = document.getElementById('download-school-template-btn');
+    const uploadSchoolExcelInput = document.getElementById('upload-school-excel');
+    const toggleSchoolFormBtn = document.getElementById('toggle-school-form-btn');
+    const manualSchoolInputArea = document.getElementById('manual-school-input-area');
+    const schoolForm = document.getElementById('school-form');
+    const cancelSchoolEditBtn = document.getElementById('cancel-school-edit-btn');
+    
+    downloadSchoolTemplateBtn.addEventListener('click', () => {
+        const headers = [["npsn", "namaSekolah", "kecamatan"]];
+        const worksheet = XLSX.utils.aoa_to_sheet(headers);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Template Data Sekolah");
+        XLSX.writeFile(workbook, "Template_Sekolah.xlsx");
+    });
 
+    uploadSchoolExcelInput.addEventListener('change', async (event) => {
+        const file = event.target.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+                const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                if (jsonData.length === 0) return alert('File Excel kosong.');
+                const batch = db.batch();
+                jsonData.forEach(row => {
+                    const docRef = db.collection('sekolah').doc();
+                    batch.set(docRef, {
+                        npsn: String(row.npsn || ''),
+                        namaSekolah: row.namaSekolah || '',
+                        kecamatan: row.kecamatan || ''
+                    });
+                });
+                await batch.commit();
+                alert(`${jsonData.length} data sekolah berhasil di-upload!`);
+                loadFirstPageSekolah();
+            } catch (error) { alert("Gagal memproses file. Pastikan header 'npsn', 'namaSekolah', 'kecamatan'."); }
+        };
+        reader.readAsArrayBuffer(file);
+        event.target.value = '';
+    });
+
+    async function clearAllSekolahData() {
+        if (!confirm("PERINGATAN: Akan menghapus SEMUA data sekolah. Lanjutkan?")) return;
+        if (!confirm("YAKIN? Data tidak bisa dikembalikan.")) return;
+        clearSchoolDataBtn.disabled = true;
+        clearSchoolDataBtn.textContent = 'Menghapus...';
+        try {
+            const collectionRef = db.collection('sekolah'); let snapshot;
+            do {
+                snapshot = await collectionRef.limit(500).get(); if (snapshot.size === 0) break;
+                const batch = db.batch();
+                snapshot.docs.forEach(doc => batch.delete(doc.ref));
+                await batch.commit();
+            } while (snapshot.size > 0);
+            alert("Semua data sekolah telah dihapus.");
+        } catch (error) {
+            alert("Gagal membersihkan data sekolah.");
+        } finally {
+            clearSchoolDataBtn.disabled = false;
+            clearSchoolDataBtn.textContent = 'Bersihkan Data Sekolah';
+            loadFirstPageSekolah();
+        }
+    }
+    clearSchoolDataBtn.addEventListener('click', clearAllSekolahData);
+    
     function loadFirstPageSekolah() {
         sekolahPaginationState.page = 1;
         sekolahPaginationState.history = [null];
-        renderSchoolQuery(db.collection('sekolah').orderBy('namaSekolah').limit(50));
+        renderQuery(db.collection('sekolah').orderBy('namaSekolah').limit(50), sekolahPaginationState, sekolahList, schoolNextBtn, schoolPrevBtn, schoolPageInfo, 'sekolah');
     }
     schoolPrevBtn.addEventListener('click', () => {
         if (sekolahPaginationState.page <= 1) return;
         sekolahPaginationState.page--;
         const prevDoc = sekolahPaginationState.history.pop();
-        renderSchoolQuery(db.collection('sekolah').orderBy('namaSekolah').startAfter(prevDoc).limit(50));
+        renderQuery(db.collection('sekolah').orderBy('namaSekolah').startAfter(prevDoc).limit(50), sekolahPaginationState, sekolahList, schoolNextBtn, schoolPrevBtn, schoolPageInfo, 'sekolah');
     });
     schoolNextBtn.addEventListener('click', () => {
         if (!sekolahPaginationState.lastVisible) return;
         sekolahPaginationState.page++;
         sekolahPaginationState.history.push(sekolahPaginationState.firstVisible);
-        renderSchoolQuery(db.collection('sekolah').orderBy('namaSekolah').startAfter(sekolahPaginationState.lastVisible).limit(50));
+        renderQuery(db.collection('sekolah').orderBy('namaSekolah').startAfter(sekolahPaginationState.lastVisible).limit(50), sekolahPaginationState, sekolahList, schoolNextBtn, schoolPrevBtn, schoolPageInfo, 'sekolah');
     });
 
-    async function renderSchoolQuery(query) {
+    toggleSchoolFormBtn.addEventListener('click', () => manualSchoolInputArea.classList.toggle('hidden'));
+    cancelSchoolEditBtn.addEventListener('click', () => {
+        manualSchoolInputArea.classList.add('hidden');
+        schoolForm.reset();
+        document.getElementById('school-id').value = '';
+    });
+
+    schoolForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('school-id').value;
+        const data = {
+            npsn: document.getElementById('npsn-sekolah-input').value,
+            namaSekolah: document.getElementById('nama-sekolah-input').value,
+            kecamatan: document.getElementById('kecamatan-sekolah-input').value,
+        };
         try {
-            sekolahList.innerHTML = `<tr><td colspan="4" style="text-align: center;">Memuat data...</td></tr>`;
-            const snapshot = await query.get();
-            sekolahList.innerHTML = '';
-
-            if (snapshot.empty) {
-                sekolahList.innerHTML = `<tr><td colspan="4" style="text-align: center;">Data sekolah masih kosong.</td></tr>`;
-                schoolNextBtn.disabled = true;
-                schoolPrevBtn.disabled = sekolahPaginationState.page <= 1;
-                return;
+            if (id) {
+                await db.collection('sekolah').doc(id).update(data);
+                alert('Data sekolah diperbarui!');
+            } else {
+                await db.collection('sekolah').add(data);
+                alert('Data sekolah disimpan!');
             }
+            schoolForm.reset();
+            document.getElementById('school-id').value = '';
+            manualSchoolInputArea.classList.add('hidden');
+            loadFirstPageSekolah();
+        } catch (err) { alert('Error: ' + err.message); }
+    });
 
-            sekolahPaginationState.firstVisible = snapshot.docs[0];
-            sekolahPaginationState.lastVisible = snapshot.docs[snapshot.docs.length - 1];
-            let counter = (sekolahPaginationState.page - 1) * 50 + 1;
-
-            snapshot.forEach(doc => {
-                const sekolah = doc.data();
-                sekolahList.innerHTML += `
-                    <tr>
-                        <td>${counter++}</td><td>${sekolah.npsn}</td><td>${sekolah.namaSekolah}</td>
-                        <td class="action-buttons">
-                            <button class="edit-btn" title="Edit Data" onclick="editSekolah('${doc.id}')"><i class="material-icons" style="font-size:20px;">edit</i></button>
-                            <button class="delete-btn" title="Hapus Data" onclick="deleteSekolah('${doc.id}')"><i class="material-icons" style="font-size:20px;">delete</i></button>
-                        </td>
-                    </tr>`;
-            });
-
-            schoolPageInfo.textContent = `Halaman ${sekolahPaginationState.page}`;
-            schoolPrevBtn.disabled = sekolahPaginationState.page === 1;
-            const nextQuery = await query.startAfter(sekolahPaginationState.lastVisible).limit(1).get();
-            schoolNextBtn.disabled = nextQuery.empty;
-        } catch (error) {
-            console.error("Gagal memuat data sekolah:", error);
-            sekolahList.innerHTML = `<tr><td colspan="4" style="text-align: center;">Gagal memuat data.</td></tr>`;
+    async function editSekolah(id) {
+        const doc = await db.collection('sekolah').doc(id).get();
+        if (doc.exists) {
+            const data = doc.data();
+            document.getElementById('school-id').value = id;
+            document.getElementById('npsn-sekolah-input').value = data.npsn;
+            document.getElementById('nama-sekolah-input').value = data.namaSekolah;
+            document.getElementById('kecamatan-sekolah-input').value = data.kecamatan || '';
+            manualSchoolInputArea.classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     }
 
-    // --- SISA FUNGSI (CRUD, UPLOAD, DLL) DI-LOAD DI SINI ---
-    // (Dihapus untuk keringkasan, pastikan Anda memiliki versi lengkapnya)
+    async function deleteSekolah(id) {
+        if (confirm('Yakin ingin menghapus data sekolah ini?')) {
+            await db.collection('sekolah').doc(id).delete();
+            alert('Data sekolah berhasil dihapus.');
+            loadFirstPageSekolah();
+        }
+    }
+
+    // --- MANAJEMEN PENGAJUAN ---
+    async function loadDaftarPengajuan() {
+        const daftarPengajuanDiv = document.getElementById('daftar-pengajuan');
+        daftarPengajuanDiv.innerHTML = '<p>Memuat data pengajuan...</p>';
+        const snapshot = await db.collection('pengajuan').orderBy('tanggalPengajuan', 'desc').get();
+        
+        if(snapshot.empty){
+            daftarPengajuanDiv.innerHTML = '<p>Belum ada pengajuan yang masuk.</p>';
+            return;
+        }
+        daftarPengajuanDiv.innerHTML = '';
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const tanggal = data.tanggalPengajuan ? data.tanggalPengajuan.toDate().toLocaleDateString('id-ID') : 'N/A';
+            daftarPengajuanDiv.innerHTML += `
+            <div class="pengajuan-item">
+                <p><strong>Nama Pemohon:</strong> ${data.namaPemohon || 'N/A'}</p>
+                <p><strong>NIP:</strong> ${data.nipPemohon || 'N/A'}</p>
+                <p><strong>Jenis Layanan:</strong> ${data.jenisLayanan || 'N/A'}</p>
+                <p><strong>Tanggal Pengajuan:</strong> ${tanggal}</p>
+                <p><strong>No. WA:</strong> ${data.nomorWa || 'N/A'}</p>
+                <p><a href="${data.dokumenUrl}" target="_blank" class="primary-btn" style="width:auto; text-decoration:none; padding: 8px 16px;">Lihat Dokumen</a></p>
+                <hr style="border:none; border-top:1px solid var(--gray-border); margin: 15px 0;">
+                <p style="display:flex; align-items:center; gap:10px;">
+                    <strong>Status:</strong> 
+                    <select onchange="updateStatus('${doc.id}', this.value)" style="width:auto; padding:8px; font-size:14px; border-radius:6px; border:1px solid var(--gray-border);">
+                        <option value="Menunggu Verifikasi" ${data.status === 'Menunggu Verifikasi' ? 'selected' : ''}>Menunggu Verifikasi</option>
+                        <option value="Sedang Diproses" ${data.status === 'Sedang Diproses' ? 'selected' : ''}>Sedang Diproses</option>
+                        <option value="Selesai" ${data.status === 'Selesai' ? 'selected' : ''}>Selesai</option>
+                        <option value="Ditolak" ${data.status === 'Ditolak' ? 'selected' : ''}>Ditolak</option>
+                    </select>
+                </p>
+            </div>`;
+        });
+    }
+
+    async function updateStatus(docId, newStatus) {
+        try {
+            await db.collection('pengajuan').doc(docId).update({ status: newStatus });
+            alert('Status pengajuan berhasil diperbarui!');
+        } catch (err) {
+            alert('Gagal memperbarui status: ' + err.message);
+        }
+    }
 </script>
 
 </body>
