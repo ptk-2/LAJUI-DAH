@@ -6,101 +6,22 @@
     <title>LAJUI DAH - Layanan Pengajuan</title>
     <style>
         :root {
-            --primary-color: #4A90E2;
-            --primary-hover: #357ABD;
-            --secondary-color: #50E3C2;
-            --secondary-hover: #38C8A8;
-            --light-gray: #f7f8fa;
-            --gray-border: #dfe1e5;
-            --text-color: #333;
-            --text-secondary: #666;
-            --bg-color: #f0f2f5;
-            --white: #ffffff;
+            --primary-color: #4A90E2; --primary-hover: #357ABD; --secondary-color: #50E3C2;
+            --secondary-hover: #38C8A8; --light-gray: #f7f8fa; --gray-border: #dfe1e5;
+            --text-color: #333; --text-secondary: #666; --bg-color: #f0f2f5; --white: #ffffff;
             --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            margin: 0;
-            padding: 20px;
-            color: var(--text-color);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-        #container {
-            width: 100%;
-            max-width: 600px;
-            margin: auto;
-            background-color: var(--white);
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: var(--shadow);
-            text-align: center;
-        }
-        header h2 {
-            font-size: 32px;
-            margin: 0 0 10px 0;
-            color: var(--primary-color);
-        }
-        header p {
-            font-size: 16px;
-            color: var(--text-secondary);
-            margin: 0 0 40px 0;
-        }
-        main {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        .main-btn {
-            padding: 20px;
-            border-radius: 10px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s;
-            color: var(--white);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .main-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; color: var(--text-color); display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        #container { width: 100%; max-width: 600px; margin: auto; background-color: var(--white); padding: 40px; border-radius: 12px; box-shadow: var(--shadow); text-align: center; }
+        header h2 { font-size: 32px; margin: 0 0 10px 0; color: var(--primary-color); }
+        header p { font-size: 16px; color: var(--text-secondary); margin: 0 0 40px 0; }
+        main { display: flex; flex-direction: column; gap: 20px; }
+        .main-btn { padding: 20px; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; border: none; transition: all 0.2s; color: var(--white); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .main-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
         #btn-pangkat { background-color: var(--primary-color); }
         #btn-pangkat:hover { background-color: var(--primary-hover); }
         #btn-pensiun { background-color: var(--secondary-color); }
         #btn-pensiun:hover { background-color: var(--secondary-hover); }
-        
-        #pensiun-options {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid var(--gray-border);
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            opacity: 1;
-            transform: translateY(0);
-            transition: opacity 0.4s ease, transform 0.4s ease;
-        }
-        #pensiun-options.hidden {
-            opacity: 0;
-            transform: translateY(-10px);
-            display: none; /* Dihapus oleh JS, tapi baik untuk fallback */
-        }
-        .pensiun-choice {
-            background-color: var(--white);
-            color: var(--text-secondary);
-            border: 1px solid var(--gray-border);
-            padding: 15px;
-        }
-        .pensiun-choice:hover {
-            background-color: var(--light-gray);
-            border-color: var(--secondary-color);
-            color: var(--secondary-hover);
-        }
     </style>
 </head>
 <body>
@@ -110,43 +31,19 @@
         <h2>LAJUI DAH</h2>
         <p>Layanan Pengajuan Kenaikan Pangkat dan Pensiun Secara Mudah</p>
     </header>
-
     <main>
         <button id="btn-pangkat" class="main-btn">Usul Kenaikan Pangkat</button>
         <button id="btn-pensiun" class="main-btn">Usul Pensiun</button>
-
-        <div id="pensiun-options" class="hidden">
-            <button class="main-btn pensiun-choice" data-jenis="masa_kerja">Pensiun Usai Masa Kerja</button>
-            <button class="main-btn pensiun-choice" data-jenis="meninggal_dunia">Pensiun Meninggal Dunia</button>
-        </div>
     </main>
 </div>
 
 <script>
-    // Ambil elemen-elemen yang dibutuhkan dari halaman
-    const btnPangkat = document.getElementById('btn-pangkat');
-    const btnPensiun = document.getElementById('btn-pensiun');
-    const pensiunOptions = document.getElementById('pensiun-options');
-    const pensiunChoices = document.querySelectorAll('.pensiun-choice');
-
-    // 1. Jika tombol "Usul Kenaikan Pangkat" diklik, langsung pindah ke halaman pangkat.html
-    btnPangkat.addEventListener('click', () => {
+    document.getElementById('btn-pangkat').addEventListener('click', () => {
         window.location.href = 'pangkat.html';
     });
 
-    // 2. Jika tombol "Usul Pensiun" diklik, tampilkan dua pilihan pensiun
-    btnPensiun.addEventListener('click', () => {
-        pensiunOptions.classList.toggle('hidden');
-    });
-
-    // 3. Jika salah satu dari pilihan pensiun diklik, pindah ke halaman pensiun.html
-    pensiunChoices.forEach(button => {
-        button.addEventListener('click', () => {
-            // Ambil jenis pensiun dari atribut 'data-jenis'
-            const jenisPensiun = button.dataset.jenis;
-            // Pindah halaman sambil mengirimkan jenis pensiun sebagai parameter URL
-            window.location.href = `pensiun.html?jenis=${jenisPensiun}`;
-        });
+    document.getElementById('btn-pensiun').addEventListener('click', () => {
+        window.location.href = 'pensiun.html';
     });
 </script>
 
