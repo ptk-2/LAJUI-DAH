@@ -6,7 +6,6 @@
     <title>Daftar Pengajuan - Admin LAJUI DAH</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
-        /* CSS Lengkap (Sama untuk semua halaman admin) */
         :root {
             --primary-color: #4A90E2; --primary-hover: #357ABD; --danger-color: #D0021B; --danger-hover: #B00216;
             --edit-color: #F5A623; --edit-hover: #D58F1D; --light-gray: #f7f8fa; --gray-border: #dfe1e5;
@@ -26,6 +25,7 @@
         .pengajuan-item { border: 1px solid var(--gray-border); border-radius: 8px; padding: 20px; margin-bottom: 15px; background-color: var(--white); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .pengajuan-item p { margin: 0 0 10px 0; text-align: left; }
         .pengajuan-item strong { color: var(--text-color); }
+        .primary-btn { background-color: var(--primary-color); }
     </style>
 </head>
 <body>
@@ -51,14 +51,9 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
 <script>
-    // Inisialisasi Firebase & Supabase
-    const firebaseConfig = { /* ... */ };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    // --- Inisialisasi Supabase ---
     const SUPABASE_URL = 'https://yghywsrqhgbaryqgdxkv.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnaHl3c3JxaGdiYXJ5cWdkeGt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyNDM3MDgsImV4cCI6MjA3NDgxOTcwOH0.4lPp4zgqoTIFbOXZCtMRkgS8PzNnyDfTg5W0vsdwpR8';
     const { createClient } = supabase;
@@ -66,27 +61,116 @@
 
     document.addEventListener('DOMContentLoaded', () => { loadDaftarPengajuan(); });
 
-    // --- MANAJEMEN PENGAJUAN ---
+    // --- MANAJEMEN PENGAJUAN (Versi Supabase) ---
     async function loadDaftarPengajuan() {
         const daftarPengajuanDiv = document.getElementById('daftar-pengajuan');
         daftarPengajuanDiv.innerHTML = '<p>Memuat data pengajuan...</p>';
-        const snapshot = await db.collection('pengajuan').orderBy('tanggalPengajuan', 'desc').get();
+
+        const { data, error } = await supabaseClient
+            .from('pengajuan')
+            .select('*')
+            .order('tanggalPengajuan', { ascending: false });
+
+        if (error) {
+            console.error("Gagal memuat pengajuan:", error);
+            daftarPengajuanDiv.innerHTML = '<p style="color:red;">Gagal memuat data. Periksa RLS tabel pengajuan.</p>';
+            return;
+        }
         
-        if(snapshot.empty){
+        if (!data || data.length === 0){
             daftarPengajuanDiv.innerHTML = '<p>Belum ada pengajuan yang masuk.</p>';
             return;
         }
 
         daftarPengajuanDiv.innerHTML = '';
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            const docId = doc.id;
-            // ... (Kode render item pengajuan tidak berubah)
+        data.forEach(item => {
+            const tanggal = new Date(item.tanggalPengajuan).toLocaleDateString('id-ID');
+            
+            let fileUploadSection = '';
+            if (item.status !== 'Selesai') {
+                fileUploadSection = `
+                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--gray-border);">
+                        <label for="file-${item.id}" style="font-size: 14px; font-weight: bold; color: var(--text-secondary);">Upload Dokumen Balasan (PDF):</label>
+                        <input type="file" id="file-${item.id}" accept=".pdf" style="margin-top: 5px; display: block; font-size: 14px;">
+                        <button onclick="uploadAndFinalize(${item.id})" style="width:auto; padding: 8px 16px; margin-top: 10px;">Upload & Selesaikan</button>
+                    </div>
+                `;
+            }
+
+            daftarPengajuanDiv.innerHTML += `
+            <div class="pengajuan-item">
+                <p><strong>Nama Pemohon:</strong> ${item.namaPemohon || 'N/A'}</p>
+                <p><strong>NIP:</strong> ${item.nipPemohon || 'N/A'}</p>
+                <p><strong>Jenis Layanan:</strong> ${item.jenisLayanan || 'N/A'}</p>
+                <p><strong>Tanggal Pengajuan:</strong> ${tanggal}</p>
+                <p><strong>No. WA (untuk dihubungi manual): <span style="font-weight:bold; color: #155724; background-color: #e8f5e9; padding: 2px 6px; border-radius: 4px;">${item.nomorWa || 'N/A'}</span></strong></p>
+                <p><a href="${item.dokumenUrl}" target="_blank" class="primary-btn" style="width:auto; text-decoration:none; padding: 8px 16px;">Lihat Dokumen Pemohon</a></p>
+                <hr style="border:none; border-top:1px solid var(--gray-border); margin: 15px 0;">
+                <p style="display:flex; align-items:center; gap:10px;">
+                    <strong>Status:</strong> 
+                    <select onchange="updateStatus(${item.id}, this.value)" style="width:auto; padding:8px; font-size:14px; border-radius:6px; border:1px solid var(--gray-border);">
+                        <option value="Menunggu Verifikasi" ${item.status === 'Menunggu Verifikasi' ? 'selected' : ''}>Menunggu Verifikasi</option>
+                        <option value="Sedang Diproses" ${item.status === 'Sedang Diproses' ? 'selected' : ''}>Sedang Diproses</option>
+                        <option value="Selesai" ${item.status === 'Selesai' ? 'selected' : ''}>Selesai</option>
+                        <option value="Ditolak" ${item.status === 'Ditolak' ? 'selected' : ''}>Ditolak</option>
+                    </select>
+                </p>
+                ${fileUploadSection}
+            </div>`;
         });
     }
     
-    async function uploadAndFinalize(docId) { /* ... Kode tidak berubah ... */ }
-    async function updateStatus(docId, newStatus) { /* ... Kode tidak berubah ... */ }
+    async function uploadAndFinalize(id) {
+        const fileInput = document.getElementById(`file-${id}`);
+        const file = fileInput.files[0];
+        if (!file) return alert('Pilih file dokumen balasan terlebih dahulu.');
+
+        const button = fileInput.nextElementSibling;
+        button.disabled = true;
+        button.textContent = 'Mengunggah...';
+
+        try {
+            const filePath = `dokumen_balasan/${id}/${Date.now()}_${file.name}`;
+            const { data: uploadData, error: uploadError } = await supabaseClient.storage.from('berkas-lajui-dah').upload(filePath, file);
+            if (uploadError) throw uploadError;
+            
+            const { data: urlData } = supabaseClient.storage.from('berkas-lajui-dah').getPublicUrl(uploadData.path);
+            const downloadURL = urlData.publicUrl;
+
+            // Update baris di tabel 'pengajuan'
+            const { error: updateError } = await supabaseClient
+                .from('pengajuan')
+                .update({ status: 'Selesai', dokumenUrlBalasan: downloadURL })
+                .eq('id', id);
+
+            if (updateError) throw updateError;
+
+            alert('Dokumen balasan berhasil diunggah! Status telah diubah menjadi "Selesai".\n\nSilakan kirim notifikasi WhatsApp ke pemohon secara manual.');
+            loadDaftarPengajuan();
+
+        } catch(error) {
+            console.error('Gagal mengunggah dokumen balasan:', error);
+            alert('Terjadi kesalahan saat mengunggah file: ' + error.message);
+            button.disabled = false;
+            button.textContent = 'Upload & Selesaikan';
+        }
+    }
+
+    async function updateStatus(id, newStatus) {
+        try {
+            const { error } = await supabaseClient
+                .from('pengajuan')
+                .update({ status: newStatus })
+                .eq('id', id);
+            
+            if (error) throw error;
+            
+            alert('Status pengajuan berhasil diperbarui!');
+            loadDaftarPengajuan();
+        } catch (err) {
+            alert('Gagal memperbarui status: ' + err.message);
+        }
+    }
 </script>
 </body>
 </html>
