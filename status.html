@@ -64,8 +64,6 @@
         statusResultsDiv.innerHTML = '<p style="text-align:center;">Mencari data pengajuan...</p>';
 
         try {
-            // Mengambil data dari tabel 'pengajuan' di Supabase
-            // Tidak ada perubahan di sini, karena 'nip' dari input "text" sudah berupa string
             const { data, error } = await supabaseClient
                 .from('pengajuan')
                 .select('*')
