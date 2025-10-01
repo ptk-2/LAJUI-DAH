@@ -146,7 +146,7 @@
         }
     });
 
-    // --- TAHAP 2: CEK DUPLIKAT & ISI FORM ---
+    // --- TAHAP 2: CEK STATUS & ISI FORM ---
     pegawaiSelect.addEventListener('change', async () => {
         selectedPegawaiId = pegawaiSelect.value;
         mainFormView.classList.add('hidden');
@@ -157,20 +157,33 @@
         if (!pegawai) return;
 
         try {
-            const { data: existingProposals, error } = await supabaseClient
+            const { data: latestProposal, error } = await supabaseClient
                 .from('pengajuan')
                 .select('status')
                 .eq('nipPemohon', pegawai.nip)
-                .in('status', ['Menunggu Verifikasi', 'Sedang Diproses']);
-            if (error) throw new Error('Gagal memeriksa status pengajuan.');
-            if (existingProposals.length > 0) {
-                const statusAktif = existingProposals[0].status;
-                duplicateFeedback.textContent = `Anda sudah memiliki pengajuan aktif dengan status: "${statusAktif}". Anda tidak dapat membuat pengajuan baru saat ini.`;
-                duplicateFeedback.className = 'feedback-box error-box';
-                duplicateFeedback.classList.remove('hidden');
-                return;
+                .order('tanggalPengajuan', { ascending: false })
+                .limit(1)
+                .single();
+
+            if (error && error.code !== 'PGRST116') { 
+                throw new Error('Gagal memeriksa status pengajuan.');
             }
 
+            if (latestProposal) {
+                const status = latestProposal.status;
+                if (status === 'Menunggu Verifikasi' || status === 'Sedang Diproses') {
+                    duplicateFeedback.textContent = `Anda sudah memiliki pengajuan aktif dengan status: "${status}". Anda tidak dapat membuat pengajuan baru saat ini.`;
+                    duplicateFeedback.className = 'feedback-box error-box';
+                    duplicateFeedback.classList.remove('hidden');
+                    return; 
+                } else if (status === 'Selesai') {
+                    duplicateFeedback.innerHTML = `Anda sudah memiliki pengajuan yang telah Selesai. Silakan periksa halaman <a href="status.html" style="color: inherit;">Cek Status Pengajuan</a> untuk mengunduh dokumen Anda.`;
+                    duplicateFeedback.className = 'feedback-box success-box';
+                    duplicateFeedback.classList.remove('hidden');
+                    return;
+                }
+            }
+            
             document.getElementById('nama-input').value = pegawai.nama || '';
             document.getElementById('nip-display').value = pegawai.nip || '';
             document.getElementById('golongan-display').value = pegawai.golongan || '';
@@ -202,6 +215,7 @@
         try {
             const filePath = `public/pensiun/${selectedPegawaiId}/${Date.now()}_${file.name}`;
             const { data, error } = await supabaseClient.storage.from('berkas-lajui-dah').upload(filePath, file);
+
             if (error) throw error;
             
             progressBar.style.width = '100%';
