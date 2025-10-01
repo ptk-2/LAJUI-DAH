@@ -36,7 +36,7 @@
     </header>
     <main>
         <div class="input-group">
-            <input type="number" id="nip-input" placeholder="Masukkan NIP Anda">
+            <input type="text" id="nip-input" placeholder="Masukkan NIP Anda">
             <button id="check-status-btn" style="width: 150px;">Cek Status</button>
         </div>
         <div id="status-results"></div>
@@ -65,6 +65,7 @@
 
         try {
             // Mengambil data dari tabel 'pengajuan' di Supabase
+            // Tidak ada perubahan di sini, karena 'nip' dari input "text" sudah berupa string
             const { data, error } = await supabaseClient
                 .from('pengajuan')
                 .select('*')
@@ -78,7 +79,7 @@
                 return;
             }
 
-            statusResultsDiv.innerHTML = ''; // Kosongkan hasil sebelumnya
+            statusResultsDiv.innerHTML = '';
             data.forEach(item => {
                 const tanggal = new Date(item.tanggalPengajuan).toLocaleDateString('id-ID');
                 
