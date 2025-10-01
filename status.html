@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cek Status Pengajuan - LAJUI DAH</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --primary-color: #4A90E2; --primary-hover: #357ABD; --success-color: #28a745;
@@ -19,6 +20,7 @@
         input, button { width: 100%; padding: 12px; border: 1px solid var(--gray-border); border-radius: 8px; font-size: 16px; box-sizing: border-box; }
         button { background-color: var(--primary-color); color: var(--white); font-weight: bold; cursor: pointer; transition: background-color 0.2s; border: none; }
         button:hover { background-color: var(--primary-hover); }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
         #status-results { margin-top: 30px; }
         .status-item { border: 1px solid var(--gray-border); border-radius: 8px; padding: 20px; margin-bottom: 15px; }
         .status-item p { margin: 0 0 10px 0; }
@@ -41,21 +43,14 @@
     </main>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 <script>
-    // [PERBAIKAN] Konfigurasi Firebase lengkap dimasukkan kembali
-    const firebaseConfig = {
-      apiKey: "AIzaSyDPUNjOaan-a92NOY9Pz_fHpKyA7tjrJiY",
-      authDomain: "lajui-dah.firebaseapp.com",
-      projectId: "lajui-dah",
-      storageBucket: "lajui-dah.firebasestorage.app",
-      messagingSenderId: "362479392989",
-      appId: "1:362479392989:web:2916e9d03b607c7413a334"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    // Inisialisasi Supabase
+    const SUPABASE_URL = 'https://yghywsrqhgbaryqgdxkv.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnaHl3c3JxaGdiYXJ5cWdkeGt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyNDM3MDgsImV4cCI6MjA3NDgxOTcwOH0.4lPp4zgqoTIFbOXZCtMRkgS8PzNnyDfTg5W0vsdwpR8';
+    const { createClient } = supabase;
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // DOM Elements
     const checkStatusBtn = document.getElementById('check-status-btn');
     const nipInput = document.getElementById('nip-input');
     const statusResultsDiv = document.getElementById('status-results');
@@ -69,31 +64,37 @@
         statusResultsDiv.innerHTML = '<p style="text-align:center;">Mencari data pengajuan...</p>';
 
         try {
-            const snapshot = await db.collection('pengajuan').where('nipPemohon', '==', nip).orderBy('tanggalPengajuan', 'desc').get();
+            // Mengambil data dari tabel 'pengajuan' di Supabase
+            const { data, error } = await supabaseClient
+                .from('pengajuan')
+                .select('*')
+                .eq('nipPemohon', nip)
+                .order('tanggalPengajuan', { ascending: false });
 
-            if (snapshot.empty) {
+            if (error) throw error;
+
+            if (!data || data.length === 0) {
                 statusResultsDiv.innerHTML = '<p style="text-align:center; color: red;">Tidak ada data pengajuan yang ditemukan untuk NIP tersebut.</p>';
                 return;
             }
 
             statusResultsDiv.innerHTML = ''; // Kosongkan hasil sebelumnya
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                const tanggal = data.tanggalPengajuan ? data.tanggalPengajuan.toDate().toLocaleDateString('id-ID') : 'N/A';
+            data.forEach(item => {
+                const tanggal = new Date(item.tanggalPengajuan).toLocaleDateString('id-ID');
                 
                 let statusBadge;
-                if(data.status === 'Selesai') statusBadge = `<span class="status-badge" style="background-color: #28a745;">Selesai</span>`;
-                else if(data.status === 'Ditolak') statusBadge = `<span class="status-badge" style="background-color: #D0021B;">Ditolak</span>`;
-                else statusBadge = `<span class="status-badge" style="background-color: #F5A623;">Sedang Diproses</span>`;
+                if(item.status === 'Selesai') statusBadge = `<span class="status-badge" style="background-color: #28a745;">Selesai</span>`;
+                else if(item.status === 'Ditolak') statusBadge = `<span class="status-badge" style="background-color: #D0021B;">Ditolak</span>`;
+                else statusBadge = `<span class="status-badge" style="background-color: #F5A623;">${item.status}</span>`;
                 
                 let downloadButton = '';
-                if(data.status === 'Selesai' && data.dokumenUrlBalasan) {
-                    downloadButton = `<a href="${data.dokumenUrlBalasan}" target="_blank" style="text-decoration: none;"><button style="width:auto; margin-top:10px;">Download Dokumen Selesai</button></a>`;
+                if(item.status === 'Selesai' && item.dokumenUrlBalasan) {
+                    downloadButton = `<a href="${item.dokumenUrlBalasan}" target="_blank" style="text-decoration: none;"><button style="width:auto; margin-top:10px;">Download Dokumen Selesai</button></a>`;
                 }
 
                 statusResultsDiv.innerHTML += `
                     <div class="status-item">
-                        <p><strong>Jenis Layanan:</strong> ${data.jenisLayanan || 'N/A'}</p>
+                        <p><strong>Jenis Layanan:</strong> ${item.jenisLayanan || 'N/A'}</p>
                         <p><strong>Tanggal Pengajuan:</strong> ${tanggal}</p>
                         <p><strong>Status:</strong> ${statusBadge}</p>
                         ${downloadButton}
@@ -103,7 +104,7 @@
 
         } catch (error) {
             console.error(error);
-            statusResultsDiv.innerHTML = '<p style="text-align:center; color: red;">Terjadi kesalahan. Pastikan Indeks Firestore sudah dibuat.</p>';
+            statusResultsDiv.innerHTML = '<p style="text-align:center; color: red;">Terjadi kesalahan saat mengambil data.</p>';
         } finally {
             checkStatusBtn.disabled = false;
             checkStatusBtn.textContent = 'Cek Status';
