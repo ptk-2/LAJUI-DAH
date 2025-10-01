@@ -53,6 +53,7 @@
             <hr>
             <h4>Langkah 2: Pilih Nama Anda</h4>
             <div class="form-group"><select id="pegawai-select" required></select></div>
+            <div id="duplicate-feedback" class="hidden"></div>
         </div>
         <form id="main-form-view" class="hidden">
             <hr>
@@ -104,6 +105,7 @@
     const submitFeedback = document.getElementById('submit-feedback');
     const progressContainer = document.getElementById('progress-container');
     const progressBar = document.getElementById('progress-bar');
+    const duplicateFeedback = document.getElementById('duplicate-feedback');
 
     let dataPegawai = [];
     let selectedPegawaiId = null;
@@ -117,20 +119,14 @@
         schoolFeedback.classList.add('hidden');
         employeeSelectionView.classList.add('hidden');
         mainFormView.classList.add('hidden');
-
         try {
-            const { data: schoolData, error: schoolError } = await supabaseClient
-                .from('sekolah').select('namaSekolah').eq('npsn', npsn).single();
+            const { data: schoolData, error: schoolError } = await supabaseClient.from('sekolah').select('namaSekolah').eq('npsn', npsn).single();
             if (schoolError) throw new Error('Sekolah dengan NPSN tersebut tidak terdaftar.');
-            
             schoolFeedback.textContent = `Sekolah ditemukan: ${schoolData.namaSekolah}`;
             schoolFeedback.className = 'feedback-box success-box';
-
-            const { data: pegawaiData, error: pegawaiError } = await supabaseClient
-                .from('pegawai').select('*').eq('npsnSekolah', npsn).order('nama');
+            const { data: pegawaiData, error: pegawaiError } = await supabaseClient.from('pegawai').select('*').eq('npsnSekolah', npsn).order('nama');
             if (pegawaiError) throw pegawaiError;
             if (pegawaiData.length === 0) throw new Error(`Tidak ada data pegawai di ${schoolData.namaSekolah}.`);
-
             dataPegawai = pegawaiData;
             pegawaiSelect.innerHTML = '<option value="">-- Pilih Nama Anda --</option>';
             dataPegawai.forEach(p => {
@@ -139,9 +135,7 @@
                 option.textContent = p.nama;
                 pegawaiSelect.appendChild(option);
             });
-            
             employeeSelectionView.classList.remove('hidden');
-
         } catch (error) {
             schoolFeedback.textContent = error.message;
             schoolFeedback.className = 'feedback-box error-box';
@@ -152,21 +146,42 @@
         }
     });
 
-    // --- TAHAP 2: PILIH NAMA & ISI FORM OTOMATIS ---
-    pegawaiSelect.addEventListener('change', () => {
+    // --- TAHAP 2: CEK DUPLIKAT & ISI FORM ---
+    pegawaiSelect.addEventListener('change', async () => {
         selectedPegawaiId = pegawaiSelect.value;
-        if (!selectedPegawaiId) {
-            mainFormView.classList.add('hidden');
-            return;
-        }
+        mainFormView.classList.add('hidden');
+        duplicateFeedback.classList.add('hidden');
+        if (!selectedPegawaiId) return;
+
         const pegawai = dataPegawai.find(p => p.id == selectedPegawaiId);
-        if (pegawai) {
+        if (!pegawai) return;
+
+        try {
+            const { data: existingProposals, error } = await supabaseClient
+                .from('pengajuan')
+                .select('status')
+                .eq('nipPemohon', pegawai.nip)
+                .in('status', ['Menunggu Verifikasi', 'Sedang Diproses']);
+            if (error) throw new Error('Gagal memeriksa status pengajuan.');
+            if (existingProposals.length > 0) {
+                const statusAktif = existingProposals[0].status;
+                duplicateFeedback.textContent = `Anda sudah memiliki pengajuan aktif dengan status: "${statusAktif}". Anda tidak dapat membuat pengajuan baru saat ini.`;
+                duplicateFeedback.className = 'feedback-box error-box';
+                duplicateFeedback.classList.remove('hidden');
+                return;
+            }
+
             document.getElementById('nama-input').value = pegawai.nama || '';
             document.getElementById('nip-display').value = pegawai.nip || '';
             document.getElementById('golongan-display').value = pegawai.golongan || '';
             document.getElementById('jabatan-display').value = pegawai.jabatan || '';
             document.getElementById('noHp-input').value = pegawai.noHp || '';
             mainFormView.classList.remove('hidden');
+
+        } catch (err) {
+            duplicateFeedback.textContent = err.message;
+            duplicateFeedback.className = 'feedback-box error-box';
+            duplicateFeedback.classList.remove('hidden');
         }
     });
 
@@ -186,17 +201,13 @@
 
         try {
             const filePath = `public/pensiun/${selectedPegawaiId}/${Date.now()}_${file.name}`;
-            const { data, error } = await supabaseClient.storage.from('berkas-lajui-dah').upload(filePath, file, {
-                onUploadProgress: (event) => {
-                    const progress = Math.round((event.loaded / event.total) * 100);
-                    progressBar.style.width = progress + '%';
-                    progressBar.textContent = progress + '%';
-                }
-            });
-
+            const { data, error } = await supabaseClient.storage.from('berkas-lajui-dah').upload(filePath, file);
             if (error) throw error;
             
+            progressBar.style.width = '100%';
+            progressBar.textContent = '100%';
             submitBtn.textContent = 'Menyimpan Data...';
+
             const { data: urlData } = supabaseClient.storage.from('berkas-lajui-dah').getPublicUrl(data.path);
             const downloadURL = urlData.publicUrl;
 
@@ -210,7 +221,6 @@
                 dokumenUrl: downloadURL,
                 status: 'Menunggu Verifikasi',
             };
-
             const { error: insertError } = await supabaseClient.from('pengajuan').insert([pengajuanData]);
             if (insertError) throw insertError;
 
@@ -218,7 +228,6 @@
                 nama: document.getElementById('nama-input').value,
                 noHp: document.getElementById('noHp-input').value
             };
-
             const { error: updateError } = await supabaseClient.from('pegawai').update(pegawaiUpdateData).eq('id', selectedPegawaiId);
             if (updateError) console.warn("Gagal update data pegawai, tapi pengajuan berhasil:", updateError);
 
@@ -230,7 +239,7 @@
         } catch (error) {
             console.error("Error mengirim pengajuan:", error);
             submitFeedback.className = 'feedback-box error-box';
-            submitFeedback.textContent = 'Gagal mengirim pengajuan. Coba lagi. Error: ' + error.message;
+            submitFeedback.textContent = 'Gagal mengirim pengajuan. Coba lagi: ' + error.message;
             submitFeedback.classList.remove('hidden');
             progressContainer.classList.add('hidden');
             submitBtn.disabled = false;
