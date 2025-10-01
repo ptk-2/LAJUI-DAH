@@ -94,14 +94,57 @@
     const { createClient } = supabase;
     const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
-    // ... (DOM Elements tidak berubah)
+    // DOM Elements
+    const checkSchoolBtn = document.getElementById('check-school-btn');
+    const npsnInput = document.getElementById('npsn-input');
+    const schoolFeedback = document.getElementById('school-feedback');
+    const employeeSelectionView = document.getElementById('employee-selection-view');
     const pegawaiSelect = document.getElementById('pegawai-select');
     const mainFormView = document.getElementById('main-form-view');
+    const submitBtn = document.getElementById('submit-btn');
+    const submitFeedback = document.getElementById('submit-feedback');
+    const progressContainer = document.getElementById('progress-container');
+    const progressBar = document.getElementById('progress-bar');
     const duplicateFeedback = document.getElementById('duplicate-feedback');
+
     let dataPegawai = [];
     let selectedPegawaiId = null;
 
-    // ... (Fungsi checkSchoolBtn tidak berubah)
+    // --- TAHAP 1: CEK SEKOLAH ---
+    checkSchoolBtn.addEventListener('click', async () => {
+        const npsn = npsnInput.value;
+        if (!npsn) return alert('Mohon masukkan NPSN.');
+        checkSchoolBtn.disabled = true;
+        checkSchoolBtn.textContent = 'Mencari...';
+        schoolFeedback.classList.add('hidden');
+        employeeSelectionView.classList.add('hidden');
+        mainFormView.classList.add('hidden');
+        try {
+            const { data: schoolData, error: schoolError } = await supabaseClient.from('sekolah').select('namaSekolah').eq('npsn', npsn).single();
+            if (schoolError) throw new Error('Sekolah dengan NPSN tersebut tidak terdaftar.');
+            schoolFeedback.textContent = `Sekolah ditemukan: ${schoolData.namaSekolah}`;
+            schoolFeedback.className = 'feedback-box success-box';
+            const { data: pegawaiData, error: pegawaiError } = await supabaseClient.from('pegawai').select('*').eq('npsnSekolah', npsn).order('nama');
+            if (pegawaiError) throw pegawaiError;
+            if (pegawaiData.length === 0) throw new Error(`Tidak ada data pegawai di ${schoolData.namaSekolah}.`);
+            dataPegawai = pegawaiData;
+            pegawaiSelect.innerHTML = '<option value="">-- Pilih Nama Anda --</option>';
+            dataPegawai.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p.id;
+                option.textContent = p.nama;
+                pegawaiSelect.appendChild(option);
+            });
+            employeeSelectionView.classList.remove('hidden');
+        } catch (error) {
+            schoolFeedback.textContent = error.message;
+            schoolFeedback.className = 'feedback-box error-box';
+        } finally {
+            schoolFeedback.classList.remove('hidden');
+            checkSchoolBtn.disabled = false;
+            checkSchoolBtn.textContent = 'Cek Sekolah';
+        }
+    });
 
     // --- TAHAP 2: CEK STATUS & ISI FORM ---
     pegawaiSelect.addEventListener('change', async () => {
@@ -114,16 +157,33 @@
         if (!pegawai) return;
 
         try {
-            // Cek pengajuan ganda berdasarkan pegawai_id
-            const { data: existingProposals, error } = await supabaseClient
+            const { data: latestProposal, error } = await supabaseClient
                 .from('pengajuan')
                 .select('status')
-                .eq('pegawai_id', pegawai.id) // Menggunakan pegawai_id
-                .in('status', ['Menunggu Verifikasi', 'Sedang Diproses']);
-            
-            // ... (Sisa logika cek duplikat tidak berubah)
+                .eq('pegawai_id', pegawai.id)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single();
 
-            // Jika tidak ada duplikat, tampilkan form
+            if (error && error.code !== 'PGRST116') { 
+                throw new Error('Gagal memeriksa status pengajuan.');
+            }
+
+            if (latestProposal) {
+                const status = latestProposal.status;
+                if (status === 'Menunggu Verifikasi' || status === 'Sedang Diproses') {
+                    duplicateFeedback.textContent = `Anda sudah memiliki pengajuan aktif dengan status: "${status}". Anda tidak dapat membuat pengajuan baru saat ini.`;
+                    duplicateFeedback.className = 'feedback-box error-box';
+                    duplicateFeedback.classList.remove('hidden');
+                    return; 
+                } else if (status === 'Selesai') {
+                    duplicateFeedback.innerHTML = `Anda sudah memiliki pengajuan yang telah Selesai. Silakan periksa halaman <a href="status.html" style="color: inherit;">Cek Status Pengajuan</a> untuk mengunduh dokumen Anda.`;
+                    duplicateFeedback.className = 'feedback-box success-box';
+                    duplicateFeedback.classList.remove('hidden');
+                    return;
+                }
+            }
+            
             document.getElementById('nama-input').value = pegawai.nama || '';
             document.getElementById('nip-display').value = pegawai.nip || '';
             document.getElementById('golongan-display').value = pegawai.golongan || '';
@@ -131,33 +191,50 @@
             document.getElementById('noHp-input').value = pegawai.noHp || '';
             mainFormView.classList.remove('hidden');
 
-        } catch (err) { /* ... (Logika error tidak berubah) ... */ }
+        } catch (err) {
+            duplicateFeedback.textContent = err.message;
+            duplicateFeedback.className = 'feedback-box error-box';
+            duplicateFeedback.classList.remove('hidden');
+        }
     });
 
-    // --- [PERUBAHAN] TAHAP 3: KIRIM PENGAJUAN DENGAN STRUKTUR BARU ---
+    // --- TAHAP 3: KIRIM PENGAJUAN (via Supabase) ---
     mainFormView.addEventListener('submit', async (e) => {
         e.preventDefault();
-        // ... (validasi & logika loading tidak berubah) ...
+        if (!selectedPegawaiId) return alert('Sesi tidak valid, mohon ulangi pencarian.');
+        const file = document.getElementById('dokumen-pensiun').files[0];
+        if (!file) return alert('Mohon unggah berkas persyaratan.');
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Mengunggah File...';
+        progressContainer.classList.remove('hidden');
+        progressBar.style.width = '0%';
+        progressBar.textContent = '0%';
+        submitFeedback.classList.add('hidden');
 
         try {
-            // 1. Upload file (tidak berubah)
             const filePath = `public/pensiun/${selectedPegawaiId}/${Date.now()}_${file.name}`;
-            // ... (logika upload, progress bar, dan dapatkan URL tidak berubah) ...
+            const { data, error } = await supabaseClient.storage.from('berkas-lajui-dah').upload(filePath, file);
+
+            if (error) throw error;
             
-            // 2. Siapkan data pengajuan baru (STRUKTUR BARU)
+            progressBar.style.width = '100%';
+            progressBar.textContent = '100%';
+            submitBtn.textContent = 'Menyimpan Data...';
+
+            const { data: urlData } = supabaseClient.storage.from('berkas-lajui-dah').getPublicUrl(data.path);
+            const downloadURL = urlData.publicUrl;
+
             const pengajuanData = {
-                pegawai_id: selectedPegawaiId, // <- Cukup simpan ID pegawai
+                pegawai_id: selectedPegawaiId,
                 jenisLayanan: "Pensiun - " + document.getElementById('jenis-pensiun').value,
                 nomorWa: document.getElementById('noHp-input').value,
                 dokumenUrl: downloadURL,
-                status: 'Menunggu Verifikasi'
-                // tanggalPengajuan diatur otomatis oleh Supabase
+                status: 'Menunggu Verifikasi',
             };
-
             const { error: insertError } = await supabaseClient.from('pengajuan').insert([pengajuanData]);
             if (insertError) throw insertError;
 
-            // 3. Siapkan data update untuk tabel pegawai (tidak berubah)
             const pegawaiUpdateData = {
                 nama: document.getElementById('nama-input').value,
                 noHp: document.getElementById('noHp-input').value
@@ -165,13 +242,21 @@
             const { error: updateError } = await supabaseClient.from('pegawai').update(pegawaiUpdateData).eq('id', selectedPegawaiId);
             if (updateError) console.warn("Gagal update data pegawai, tapi pengajuan berhasil:", updateError);
 
-            // ... (logika sukses dan pengalihan halaman tidak berubah) ...
+            submitFeedback.className = 'feedback-box success-box';
+            submitFeedback.textContent = 'Pengajuan berhasil dikirim! Halaman akan dialihkan...';
+            submitFeedback.classList.remove('hidden');
+            setTimeout(() => window.location.href = 'index.html', 3000);
 
         } catch (error) {
-            // ... (logika error tidak berubah) ...
+            console.error("Error mengirim pengajuan:", error);
+            submitFeedback.className = 'feedback-box error-box';
+            submitFeedback.textContent = 'Gagal mengirim pengajuan. Coba lagi: ' + error.message;
+            submitFeedback.classList.remove('hidden');
+            progressContainer.classList.add('hidden');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Kirim Pengajuan';
         }
     });
 </script>
-
 </body>
 </html>
