@@ -6,7 +6,25 @@
     <title>Cek Status Pengajuan - LAJUI DAH</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* ... CSS tidak berubah ... */
+        :root {
+            --primary-color: #4A90E2; --primary-hover: #357ABD; --success-color: #28a745;
+            --light-gray: #f7f8fa; --gray-border: #dfe1e5; --text-color: #333;
+            --text-secondary: #666; --bg-color: #f0f2f5; --white: #ffffff;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+        #container { width: 100%; max-width: 800px; background-color: var(--white); padding: 40px; border-radius: 12px; box-shadow: var(--shadow); }
+        header { text-align: center; margin-bottom: 30px; }
+        h2 { font-size: 28px; margin: 0; color: var(--primary-color); }
+        .input-group { display: flex; gap: 10px; }
+        input, button { width: 100%; padding: 12px; border: 1px solid var(--gray-border); border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        button { background-color: var(--primary-color); color: var(--white); font-weight: bold; cursor: pointer; transition: background-color 0.2s; border: none; }
+        button:hover { background-color: var(--primary-hover); }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        #status-results { margin-top: 30px; }
+        .status-item { border: 1px solid var(--gray-border); border-radius: 8px; padding: 20px; margin-bottom: 15px; }
+        .status-item p { margin: 0 0 10px 0; }
+        .status-badge { padding: 5px 10px; border-radius: 15px; color: white; font-size: 12px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -38,7 +56,6 @@
     const statusResultsDiv = document.getElementById('status-results');
 
     checkStatusBtn.addEventListener('click', async () => {
-        // [PERBAIKAN] Menambahkan .trim() untuk menghapus spasi yang tidak sengaja terketik
         const nip = nipInput.value.trim();
         if (!nip) return alert('Mohon masukkan NIP.');
 
@@ -60,18 +77,20 @@
                 return;
             }
 
-            // ... sisa kode render tidak berubah ...
             statusResultsDiv.innerHTML = '';
             data.forEach(item => {
                 const tanggal = new Date(item.tanggalPengajuan).toLocaleDateString('id-ID');
+                
                 let statusBadge;
                 if(item.status === 'Selesai') statusBadge = `<span class="status-badge" style="background-color: #28a745;">Selesai</span>`;
                 else if(item.status === 'Ditolak') statusBadge = `<span class="status-badge" style="background-color: #D0021B;">Ditolak</span>`;
                 else statusBadge = `<span class="status-badge" style="background-color: #F5A623;">${item.status}</span>`;
+                
                 let downloadButton = '';
                 if(item.status === 'Selesai' && item.dokumenUrlBalasan) {
                     downloadButton = `<a href="${item.dokumenUrlBalasan}" target="_blank" style="text-decoration: none;"><button style="width:auto; margin-top:10px;">Download Dokumen Selesai</button></a>`;
                 }
+
                 statusResultsDiv.innerHTML += `
                     <div class="status-item">
                         <p><strong>Jenis Layanan:</strong> ${item.jenisLayanan || 'N/A'}</p>
