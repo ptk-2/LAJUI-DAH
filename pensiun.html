@@ -161,7 +161,7 @@
                 .from('pengajuan')
                 .select('status')
                 .eq('pegawai_id', pegawai.id)
-                .order('tanggalPengajuan', { ascending: false })
+                .order('created_at', { ascending: false })
                 .limit(1)
                 .single();
 
