@@ -62,16 +62,13 @@
                 <div class="form-group"><label for="nama-input">Nama Lengkap (Bisa diedit)</label><input id="nama-input" type="text" required></div>
                 <div class="form-group"><label>NIP</label><input id="nip-display" type="text" readonly></div>
                 <div class="form-group"><label>Pangkat / Golongan Saat Ini</label><input id="golongan-display" type="text" readonly></div>
-                
                 <div class="form-group">
                     <label for="usulan-pangkat-select">Pangkat / Golongan yang Diusulkan</label>
                     <select id="usulan-pangkat-select" required>
                         <option value="">-- Pilih Pangkat Usulan --</option>
                     </select>
                 </div>
-
                 <div class="form-group"><label>Jabatan</label><input id="jabatan-display" type="text" readonly></div>
-                <div class="form-group"><label for="noHp-input">Nomor HP/WA Aktif (Bisa diedit)</label><input id="noHp-input" type="number" required></div>
             </div>
             <div class="form-group">
                 <label for="dokumen-pangkat">Upload Berkas Persyaratan Kenaikan Pangkat (PDF)</label>
@@ -93,7 +90,6 @@
     const { createClient } = supabase;
     const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
-    // [PENAMBAHAN] Referensi Urutan Pangkat
     const daftarPangkat = [
         { golongan: "I/a", nama: "Juru Muda" }, { golongan: "I/b", nama: "Juru Muda Tingkat I" }, { golongan: "I/c", nama: "Juru" }, { golongan: "I/d", nama: "Juru Tingkat I" },
         { golongan: "II/a", nama: "Pengatur Muda" }, { golongan: "II/b", nama: "Pengatur Muda Tingkat I" }, { golongan: "II/c", nama: "Pengatur" }, { golongan: "II/d", nama: "Pengatur Tingkat I" },
@@ -150,12 +146,11 @@
         }
     });
 
-    // [PENYESUAIAN] Logika diubah untuk mengisi dropdown pangkat usulan
     pegawaiSelect.addEventListener('change', async () => {
         const selectedId = pegawaiSelect.value;
         mainFormView.classList.add('hidden');
         duplicateFeedback.classList.add('hidden');
-        usulanPangkatSelect.innerHTML = '<option value="">-- Pilih Pangkat Usulan --</option>'; // Reset dropdown
+        usulanPangkatSelect.innerHTML = '<option value="">-- Pilih Pangkat Usulan --</option>';
         if (!selectedId) return;
 
         selectedPegawai = dataPegawai.find(p => p.id == selectedId);
@@ -176,9 +171,7 @@
             document.getElementById('nip-display').value = selectedPegawai.nip || '';
             document.getElementById('golongan-display').value = selectedPegawai.golongan || '';
             document.getElementById('jabatan-display').value = selectedPegawai.jabatan || '';
-            document.getElementById('noHp-input').value = selectedPegawai.noHp || '';
 
-            // [PENAMBAHAN] Logika untuk mengisi pilihan pangkat yang lebih tinggi
             const currentIndex = daftarPangkat.findIndex(p => p.golongan === selectedPegawai.golongan);
             if (currentIndex > -1) {
                 const pangkatLebihTinggi = daftarPangkat.slice(currentIndex + 1);
@@ -221,23 +214,22 @@
             const { data: urlData } = supabaseClient.storage.from('berkas-lajui-dah').getPublicUrl(data.path);
             const downloadURL = urlData.publicUrl;
             
-            // [PENYESUAIAN] Menyimpan data lengkap termasuk pangkat usulan
+            // [PENGHAPUSAN] Kolom 'nomorWa' dihilangkan
             const jenisLayananText = `Kenaikan Pangkat ke ${usulanPangkatSelect.value}`;
             const pengajuanData = {
                 pegawai_id: selectedPegawai.id,
                 namaPemohon: document.getElementById('nama-input').value,
                 nipPemohon: selectedPegawai.nip,
-                jenisLayanan: jenisLayananText, // Simpan teks lengkap pangkat usulan
-                nomorWa: document.getElementById('noHp-input').value,
+                jenisLayanan: jenisLayananText,
                 dokumenUrl: downloadURL,
                 status: 'Menunggu Verifikasi',
             };
             const { error: insertError } = await supabaseClient.from('pengajuan').insert([pengajuanData]);
             if (insertError) throw insertError;
 
+            // [PENGHAPUSAN] Update 'noHp' dihilangkan
             const pegawaiUpdateData = {
-                nama: document.getElementById('nama-input').value,
-                noHp: document.getElementById('noHp-input').value
+                nama: document.getElementById('nama-input').value
             };
             await supabaseClient.from('pegawai').update(pegawaiUpdateData).eq('id', selectedPegawai.id);
 
