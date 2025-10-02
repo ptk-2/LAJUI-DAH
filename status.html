@@ -3,112 +3,197 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cek Status Pengajuan - LAJUI DAH</title>
+    <title>Daftar Pengajuan Selesai - LAJUI DAH</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #4A90E2; --primary-hover: #357ABD; --success-color: #28a745;
+            --primary-color: #4A90E2; --primary-hover: #357ABD; --success-color: #28a745; --success-hover: #218838;
             --light-gray: #f7f8fa; --gray-border: #dfe1e5; --text-color: #333;
             --text-secondary: #666; --bg-color: #f0f2f5; --white: #ffffff;
             --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
-        #container { width: 100%; max-width: 800px; background-color: var(--white); padding: 40px; border-radius: 12px; box-shadow: var(--shadow); }
-        header { text-align: center; margin-bottom: 30px; }
+        #container { width: 100%; max-width: 1200px; background-color: var(--white); padding: 40px; border-radius: 12px; box-shadow: var(--shadow); }
+        header { text-align: center; margin-bottom: 20px; }
         h2 { font-size: 28px; margin: 0; color: var(--primary-color); }
-        .input-group { display: flex; gap: 10px; }
-        input, button { width: 100%; padding: 12px; border: 1px solid var(--gray-border); border-radius: 8px; font-size: 16px; box-sizing: border-box; }
-        button { background-color: var(--primary-color); color: var(--white); font-weight: bold; cursor: pointer; transition: background-color 0.2s; border: none; }
-        button:hover { background-color: var(--primary-hover); }
-        button:disabled { background-color: #ccc; cursor: not-allowed; }
-        #status-results { margin-top: 30px; }
-        .status-item { border: 1px solid var(--gray-border); border-radius: 8px; padding: 20px; margin-bottom: 15px; }
-        .status-item p { margin: 0 0 10px 0; }
-        .status-badge { padding: 5px 10px; border-radius: 15px; color: white; font-size: 12px; font-weight: bold; }
+        
+        .tab-nav { display: flex; border-bottom: 2px solid var(--gray-border); margin-bottom: 30px; }
+        .tab-btn { padding: 15px 30px; cursor: pointer; background-color: transparent; border: none; font-size: 16px; font-weight: bold; color: var(--text-secondary); border-bottom: 3px solid transparent; transition: all 0.2s; }
+        .tab-btn:hover { color: var(--primary-color); }
+        .tab-btn.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; table-layout: fixed; }
+        th, td { padding: 10px 8px; border-bottom: 1px solid var(--gray-border); text-align: left; font-size: 13px; word-break: break-word; white-space: normal; vertical-align: top; }
+        thead tr { background-color: var(--light-gray); }
+        tbody tr:hover { background-color: #e9ecef; }
+        .action-buttons { text-align: center !important; }
+
+        /* [PENYESUAIAN] Gaya diubah untuk tombol ikon download */
+        .download-btn {
+            background-color: var(--success-color);
+            color: var(--white);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+        .download-btn:hover {
+            background-color: var(--success-hover);
+        }
+        .download-btn .material-icons {
+            font-size: 18px;
+        }
+
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
 <div id="container">
     <header>
-        <h2>Cek Status Pengajuan Anda</h2>
-        <p style="color: var(--text-secondary);">Masukkan Nomor Induk Pegawai (NIP) Anda untuk melihat riwayat dan status pengajuan.</p>
+        <h2>Daftar Pengajuan Selesai</h2>
+        <p style="color: var(--text-secondary);">Pilih jenis pengajuan untuk melihat daftar yang telah selesai diproses.</p>
     </header>
     <main>
-        <div class="input-group">
-            <input type="text" id="nip-input" placeholder="Masukkan NIP Anda">
-            <button id="check-status-btn" style="width: 150px;">Cek Status</button>
+        <div class="tab-nav">
+            <button id="btn-pangkat" class="tab-btn active">Kenaikan Pangkat</button>
+            <button id="btn-pensiun" class="tab-btn">Pensiun</button>
         </div>
-        <div id="status-results"></div>
+
+        <div id="content-pangkat">
+            <table>
+                <colgroup>
+                    <col style="width: 4%;">
+                    <col style="width: 18%;"><col style="width: 15%;"><col style="width: 15%;">
+                    <col style="width: 12%;"><col style="width: 20%;"><col style="width: 10%;">
+                    <col style="width: 10%;">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>No</th><th>Nama</th><th>NIP</th><th>Unit Kerja</th><th>Kecamatan</th>
+                        <th>Jenis Layanan</th><th>Tanggal Selesai</th><th style="text-align: center;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="pangkat-list"></tbody>
+            </table>
+        </div>
+
+        <div id="content-pensiun" class="hidden">
+            <table>
+                <colgroup>
+                    <col style="width: 4%;">
+                    <col style="width: 18%;"><col style="width: 15%;"><col style="width: 15%;">
+                    <col style="width: 12%;"><col style="width: 20%;"><col style="width: 10%;">
+                    <col style="width: 10%;">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>No</th><th>Nama</th><th>NIP</th><th>Unit Kerja</th><th>Kecamatan</th>
+                        <th>Jenis Layanan</th><th>Tanggal Selesai</th><th style="text-align: center;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="pensiun-list"></tbody>
+            </table>
+        </div>
     </main>
 </div>
 
 <script>
-    // Inisialisasi Supabase
     const SUPABASE_URL = 'https://yghywsrqhgbaryqgdxkv.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnaHl3c3JxaGdiYXJ5cWdkeGt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyNDM3MDgsImV4cCI6MjA3NDgxOTcwOH0.4lPp4zgqoTIFbOXZCtMRkgS8PzNnyDfTg5W0vsdwpR8';
     const { createClient } = supabase;
     const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // DOM Elements
-    const checkStatusBtn = document.getElementById('check-status-btn');
-    const nipInput = document.getElementById('nip-input');
-    const statusResultsDiv = document.getElementById('status-results');
+    const btnPangkat = document.getElementById('btn-pangkat');
+    const btnPensiun = document.getElementById('btn-pensiun');
+    const contentPangkat = document.getElementById('content-pangkat');
+    const contentPensiun = document.getElementById('content-pensiun');
 
-    checkStatusBtn.addEventListener('click', async () => {
-        const nip = nipInput.value.trim();
-        if (!nip) return alert('Mohon masukkan NIP.');
+    btnPangkat.addEventListener('click', () => {
+        btnPangkat.classList.add('active');
+        btnPensiun.classList.remove('active');
+        contentPangkat.classList.remove('hidden');
+        contentPensiun.classList.add('hidden');
+    });
 
-        checkStatusBtn.disabled = true;
-        checkStatusBtn.textContent = 'Mencari...';
-        statusResultsDiv.innerHTML = '<p style="text-align:center;">Mencari data pengajuan...</p>';
+    btnPensiun.addEventListener('click', () => {
+        btnPensiun.classList.add('active');
+        btnPangkat.classList.remove('active');
+        contentPensiun.classList.remove('hidden');
+        contentPangkat.classList.add('hidden');
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadSubmissions('Pangkat', 'pangkat-list');
+        loadSubmissions('Pensiun', 'pensiun-list');
+    });
+
+    async function loadSubmissions(jenis, tableBodyId) {
+        const tableBody = document.getElementById(tableBodyId);
+        tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 20px;">Memuat data...</td></tr>`;
 
         try {
             const { data, error } = await supabaseClient
                 .from('pengajuan')
-                .select('*')
-                .eq('nipPemohon', nip)
-                .order('tanggalPengajuan', { ascending: false });
+                .select(`namaPemohon, nipPemohon, jenisLayanan, created_at, dokumenUrlBalasan, pegawai(unitKerja, kecamatan)`)
+                .eq('status', 'Selesai')
+                .like('jenisLayanan', `%${jenis}%`) 
+                .order('created_at', { ascending: false });
 
             if (error) throw error;
 
             if (!data || data.length === 0) {
-                statusResultsDiv.innerHTML = '<p style="text-align:center; color: red;">Tidak ada data pengajuan yang ditemukan untuk NIP tersebut.</p>';
+                tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 20px;">Belum ada pengajuan ${jenis.toLowerCase()} yang selesai.</td></tr>`;
                 return;
             }
 
-            statusResultsDiv.innerHTML = '';
-            data.forEach(item => {
-                const tanggal = new Date(item.tanggalPengajuan).toLocaleDateString('id-ID');
+            tableBody.innerHTML = '';
+            data.forEach((item, index) => {
+                const tanggal = new Date(item.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
                 
-                let statusBadge;
-                if(item.status === 'Selesai') statusBadge = `<span class="status-badge" style="background-color: #28a745;">Selesai</span>`;
-                else if(item.status === 'Ditolak') statusBadge = `<span class="status-badge" style="background-color: #D0021B;">Ditolak</span>`;
-                else statusBadge = `<span class="status-badge" style="background-color: #F5A623;">${item.status}</span>`;
+                // [PENYESUAIAN] Logika diubah untuk membuat tombol ikon
+                let downloadButton = 'Tidak Tersedia';
+                if (item.dokumenUrlBalasan) {
+                    downloadButton = `<a href="${item.dokumenUrlBalasan}" target="_blank" class="download-btn" title="Download Dokumen">
+                                        <i class="material-icons">download</i>
+                                      </a>`;
+                }
                 
-                let downloadButton = '';
-                if(item.status === 'Selesai' && item.dokumenUrlBalasan) {
-                    downloadButton = `<a href="${item.dokumenUrlBalasan}" target="_blank" style="text-decoration: none;"><button style="width:auto; margin-top:10px;">Download Dokumen Selesai</button></a>`;
+                const unitKerja = item.pegawai ? item.pegawai.unitKerja : 'N/A';
+                const kecamatan = item.pegawai ? item.pegawai.kecamatan : 'N/A';
+
+                let jenisLayananSimple = item.jenisLayanan || 'N/A';
+                if (jenisLayananSimple.startsWith('Kenaikan Pangkat ke ')) {
+                    jenisLayananSimple = jenisLayananSimple.replace('Kenaikan Pangkat ke ', 'Naik ke ');
+                } else if (jenisLayananSimple.startsWith('Pensiun - ')) {
+                    jenisLayananSimple = jenisLayananSimple.replace('Pensiun - ', '');
                 }
 
-                statusResultsDiv.innerHTML += `
-                    <div class="status-item">
-                        <p><strong>Jenis Layanan:</strong> ${item.jenisLayanan || 'N/A'}</p>
-                        <p><strong>Tanggal Pengajuan:</strong> ${tanggal}</p>
-                        <p><strong>Status:</strong> ${statusBadge}</p>
-                        ${downloadButton}
-                    </div>
+                const row = `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${item.namaPemohon || 'N/A'}</td>
+                        <td>${item.nipPemohon || 'N/A'}</td>
+                        <td>${unitKerja}</td>
+                        <td>${kecamatan}</td>
+                        <td>${jenisLayananSimple}</td>
+                        <td>${tanggal}</td>
+                        <td class="action-buttons">${downloadButton}</td>
+                    </tr>
                 `;
+                tableBody.innerHTML += row;
             });
 
         } catch (error) {
             console.error(error);
-            statusResultsDiv.innerHTML = '<p style="text-align:center; color: red;">Terjadi kesalahan. Pastikan Policy RLS untuk SELECT di tabel "pengajuan" sudah aktif.</p>';
-        } finally {
-            checkStatusBtn.disabled = false;
-            checkStatusBtn.textContent = 'Cek Status';
+            tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 20px; color: red;">Gagal memuat data. Periksa RLS tabel.</td></tr>`;
         }
-    });
+    }
 </script>
 
 </body>
