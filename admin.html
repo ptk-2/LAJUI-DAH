@@ -11,71 +11,40 @@
             --edit-color: #F5A623; --edit-hover: #D58F1D; --light-gray: #f7f8fa; --gray-border: #dfe1e5;
             --text-color: #333; --text-secondary: #666; --bg-color: #f0f2f5; --white: #ffffff;
             --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            --success-color: #28a745; /* [PENAMBAHAN] Warna hijau untuk tombol upload/selesai */
-            --success-hover: #218838;
+            --success-color: #28a745; --success-hover: #218838;
         }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; color: var(--text-color); animation: fadeIn 0.5s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; color: var(--text-color); }
         #container { width: 100%; max-width: 1200px; margin: auto; background-color: var(--white); padding: 30px; border-radius: 12px; box-shadow: var(--shadow); }
-        header { text-align: center; margin-bottom: 20px; border-bottom: 1px solid var(--gray-border); padding-bottom: 20px; }
-        h2 { font-size: 28px; margin: 0; }
+        header { display: flex; justify-content: space-between; align-items: center; text-align: left; margin-bottom: 20px; border-bottom: 1px solid var(--gray-border); padding-bottom: 20px; }
+        header div h2 { font-size: 28px; margin: 0; }
         h3 { font-size: 22px; color: var(--primary-color); border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; margin-top: 40px; }
         .main-nav { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; flex-wrap: wrap; }
         .nav-link { background-color: var(--light-gray); color: var(--text-secondary); padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; border: 1px solid var(--gray-border); transition: all 0.2s; text-decoration: none; }
         .nav-link.active { background-color: var(--primary-color); color: var(--white); border-color: var(--primary-color); }
         button { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; border: none; transition: background-color 0.2s, box-shadow 0.2s; color: var(--white); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         
-        .pengajuan-item { 
-            border: 1px solid var(--gray-border); 
-            border-radius: 8px; 
-            margin-bottom: 20px; 
-            background-color: var(--white); 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            overflow: hidden;
-        }
-        .info-grid {
-            padding: 20px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 10px 20px;
-        }
+        .pengajuan-item { border: 1px solid var(--gray-border); border-radius: 8px; margin-bottom: 20px; background-color: var(--white); box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow: hidden; }
+        .info-grid { padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px 20px; }
         .info-grid p { margin: 0; text-align: left; }
         .info-grid strong { color: var(--text-color); }
-
-        .actions-footer {
-            background-color: var(--light-gray);
-            padding: 20px;
-            border-top: 1px solid var(--gray-border);
-        }
-        .status-control, .upload-section {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-        .upload-section {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid var(--gray-border);
-        }
+        .actions-footer { background-color: var(--light-gray); padding: 20px; border-top: 1px solid var(--gray-border); }
+        .status-control, .upload-section { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .upload-section { margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--gray-border); }
         .primary-btn { background-color: var(--primary-color); }
         .danger-btn { background-color: var(--danger-color); }
         .danger-btn:hover { background-color: var(--danger-hover); }
-
-        /* [PENAMBAHAN] Gaya untuk tombol Upload & Selesaikan Pengajuan */
-        .upload-finalize-btn {
-            background-color: var(--success-color);
-        }
-        .upload-finalize-btn:hover {
-            background-color: var(--success-hover);
-        }
+        .upload-finalize-btn { background-color: var(--success-color); }
+        .upload-finalize-btn:hover { background-color: var(--success-hover); }
     </style>
 </head>
 <body>
 <div id="container">
     <header>
-        <h2>LAJUI DAH</h2>
-        <p style="color: var(--text-secondary); margin: 5px 0 0 0;">Dasbor Admin</p>
+        <div>
+            <h2>LAJUI DAH</h2>
+            <p style="color: var(--text-secondary); margin: 5px 0 0 0;">Dasbor Admin</p>
+        </div>
+        <button id="logout-btn" class="danger-btn">Logout</button>
     </header>
 
     <nav class="main-nav">
@@ -96,13 +65,31 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-    // --- Inisialisasi Supabase ---
     const SUPABASE_URL = 'https://yghywsrqhgbaryqgdxkv.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnaHl3c3JxaGdiYXJ5cWdkeGt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyNDM3MDgsImV4cCI6MjA3NDgxOTcwOH0.4lPp4zgqoTIFbOXZCtMRkgS8PzNnyDfTg5W0vsdwpR8';
     const { createClient } = supabase;
     const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Objek untuk memetakan Golongan ke Pangkat
+    // [PENAMBAHAN] Blok untuk memproteksi halaman
+    (async () => {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session) {
+            // Jika tidak ada sesi (belum login), paksa kembali ke halaman login
+            window.location.href = 'login.html';
+        }
+    })();
+
+    // [PENAMBAHAN] Event listener untuk tombol logout
+    document.addEventListener('DOMContentLoaded', () => {
+        const logoutBtn = document.getElementById('logout-btn');
+        logoutBtn.addEventListener('click', async () => {
+            await supabaseClient.auth.signOut();
+            window.location.href = 'login.html';
+        });
+
+        loadDaftarPengajuan();
+    });
+
     const pangkatRef = {
         "I/a": "Juru Muda", "I/b": "Juru Muda Tingkat I", "I/c": "Juru", "I/d": "Juru Tingkat I",
         "II/a": "Pengatur Muda", "II/b": "Pengatur Muda Tingkat I", "II/c": "Pengatur", "II/d": "Pengatur Tingkat I",
@@ -110,22 +97,14 @@
         "IV/a": "Pembina", "IV/b": "Pembina Tingkat I", "IV/c": "Pembina Utama Muda", "IV/d": "Pembina Utama Madya", "IV/e": "Pembina Utama"
     };
 
-    document.addEventListener('DOMContentLoaded', () => { loadDaftarPengajuan(); });
-
     async function loadDaftarPengajuan() {
+        // ... (Sisa kode dari fungsi loadDaftarPengajuan hingga akhir skrip tetap sama seperti sebelumnya)
         const daftarPengajuanDiv = document.getElementById('daftar-pengajuan');
         daftarPengajuanDiv.innerHTML = '<p>Memuat data pengajuan...</p>';
 
         const { data, error } = await supabaseClient
             .from('pengajuan')
-            .select(`
-                *,
-                pegawai (
-                    unitKerja,
-                    kecamatan,
-                    golongan
-                )
-            `)
+            .select(`*, pegawai (unitKerja, kecamatan, golongan)`)
             .order('created_at', { ascending: false });
 
         if (error) {
@@ -196,29 +175,19 @@
         const fileInput = document.getElementById(`file-${id}`);
         const file = fileInput.files[0];
         if (!file) return alert('Pilih file dokumen balasan terlebih dahulu.');
-
         const button = fileInput.nextElementSibling;
         button.disabled = true;
         button.textContent = 'Mengunggah...';
-
         try {
             const filePath = `dokumen_balasan/${id}/${Date.now()}_${file.name}`;
             const { data: uploadData, error: uploadError } = await supabaseClient.storage.from('berkas-lajui-dah').upload(filePath, file);
             if (uploadError) throw uploadError;
-            
             const { data: urlData } = supabaseClient.storage.from('berkas-lajui-dah').getPublicUrl(uploadData.path);
             const downloadURL = urlData.publicUrl;
-
-            const { error: updateError } = await supabaseClient
-                .from('pengajuan')
-                .update({ status: 'Selesai', dokumenUrlBalasan: downloadURL })
-                .eq('id', id);
-
+            const { error: updateError } = await supabaseClient.from('pengajuan').update({ status: 'Selesai', dokumenUrlBalasan: downloadURL }).eq('id', id);
             if (updateError) throw updateError;
-
             alert('Dokumen balasan berhasil diunggah! Status telah diubah menjadi "Selesai".\n\nSilakan kirim notifikasi WhatsApp ke pemohon secara manual.');
             loadDaftarPengajuan();
-
         } catch(error) {
             console.error('Gagal mengunggah dokumen balasan:', error);
             alert('Terjadi kesalahan saat mengunggah file: ' + error.message);
@@ -229,13 +198,8 @@
 
     async function updateStatus(id, newStatus) {
         try {
-            const { error } = await supabaseClient
-                .from('pengajuan')
-                .update({ status: newStatus })
-                .eq('id', id);
-            
+            const { error } = await supabaseClient.from('pengajuan').update({ status: newStatus }).eq('id', id);
             if (error) throw error;
-            
             alert('Status pengajuan berhasil diperbarui!');
             loadDaftarPengajuan();
         } catch (err) {
@@ -244,10 +208,7 @@
     }
 
     async function deletePengajuan(id, dokumenUrl, dokumenUrlBalasan) {
-        if (!confirm('Anda yakin ingin menghapus pengajuan ini secara permanen? Tindakan ini tidak bisa dibatalkan.')) {
-            return;
-        }
-
+        if (!confirm('Anda yakin ingin menghapus pengajuan ini secara permanen? Tindakan ini tidak bisa dibatalkan.')) return;
         try {
             const filesToDelete = [];
             const getPathFromUrl = (url) => {
@@ -257,23 +218,15 @@
                     return path ? decodeURIComponent(path) : null;
                 } catch (e) { return null; }
             };
-
             const mainFilePath = getPathFromUrl(dokumenUrl);
             if (mainFilePath) filesToDelete.push(mainFilePath);
-
             const replyFilePath = getPathFromUrl(dokumenUrlBalasan);
             if (replyFilePath) filesToDelete.push(replyFilePath);
-
-            if (filesToDelete.length > 0) {
-                await supabaseClient.storage.from('berkas-lajui-dah').remove(filesToDelete);
-            }
-
+            if (filesToDelete.length > 0) await supabaseClient.storage.from('berkas-lajui-dah').remove(filesToDelete);
             const { error: dbError } = await supabaseClient.from('pengajuan').delete().eq('id', id);
             if (dbError) throw dbError;
-
             alert('Pengajuan berhasil dihapus.');
             loadDaftarPengajuan();
-
         } catch (error) {
             alert('Gagal menghapus pengajuan: ' + error.message);
         }
