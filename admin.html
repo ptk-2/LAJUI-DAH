@@ -69,7 +69,7 @@
         const { data, error } = await supabaseClient
             .from('pengajuan')
             .select('*')
-            .order('tanggalPengajuan', { ascending: false });
+            .order('created_at', { ascending: false });
 
         if (error) {
             console.error("Gagal memuat pengajuan:", error);
@@ -84,7 +84,7 @@
 
         daftarPengajuanDiv.innerHTML = '';
         data.forEach(item => {
-            const tanggal = new Date(item.tanggalPengajuan).toLocaleDateString('id-ID');
+            const tanggal = new Date(item.created_at).toLocaleDateString('id-ID');
             
             let fileUploadSection = '';
             if (item.status !== 'Selesai') {
