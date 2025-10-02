@@ -23,17 +23,47 @@
         .nav-link.active { background-color: var(--primary-color); color: var(--white); border-color: var(--primary-color); }
         button { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; border: none; transition: background-color 0.2s, box-shadow 0.2s; color: var(--white); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         button:disabled { background-color: #ccc; cursor: not-allowed; box-shadow: none; }
+        .search-container { margin-bottom: 20px; }
+        .search-container input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--gray-border);
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
         .bulk-actions { background-color: var(--light-gray); border: 1px solid var(--gray-border); padding: 20px; margin-bottom: 20px; border-radius: 8px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
         .bulk-actions p { margin: 0; flex-grow: 1; font-size: 14px; color: var(--text-secondary); }
         .bulk-actions .spacer { flex-grow: 2; }
         .danger-btn { background-color: var(--danger-color); }
         .danger-btn:hover { background-color: var(--danger-hover); }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; table-layout: fixed; }
-        th, td { padding: 12px 15px; border-bottom: 1px solid var(--gray-border); text-align: left; font-size: 14px; word-break: break-word; }
+        /* [PENYESUAIAN] Ukuran font dan padding tabel dikecilkan */
+        th, td { 
+            padding: 10px 8px; 
+            border-bottom: 1px solid var(--gray-border); 
+            text-align: left; 
+            font-size: 13px; 
+            word-break: break-word; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            white-space: nowrap; 
+        }
         thead tr { background-color: var(--light-gray); }
         tbody tr:hover { background-color: #e9ecef; }
-        .action-buttons { width: 120px; text-align: center !important; }
-        .action-buttons button { width: 40px; height: 40px; padding: 0; margin-right: 5px; color: white; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; }
+        .action-buttons { text-align: center !important; }
+        /* [PENYESUAIAN] Ukuran tombol aksi dikecilkan */
+        .action-buttons button { 
+            width: 32px; 
+            height: 32px; 
+            padding: 0; 
+            margin-right: 4px; 
+            color: white; 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; 
+            border-radius: 50%; 
+        }
         .edit-btn { background-color: var(--edit-color); }
         .delete-btn { background-color: var(--danger-color); }
         .hidden { display: none; }
@@ -69,6 +99,11 @@
     <main>
         <div id="pegawai-view">
             <h3>Database Pegawai</h3>
+
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="Cari berdasarkan nama, NIP, unit kerja, dll...">
+            </div>
+
             <div class="bulk-actions">
                 <p>Gunakan template atau input manual untuk menambah data.</p>
                 <button id="download-template-btn" class="primary-btn">Download Template</button>
@@ -97,6 +132,17 @@
                 </form>
             </div>
             <table>
+                <colgroup>
+                    <col style="width: 4%;">
+                    <col style="width: 19%;">
+                    <col style="width: 15%;">
+                    <col style="width: 4%;">
+                    <col style="width: 16%;">
+                    <col style="width: 11%;">
+                    <col style="width: 12%;">
+                    <col style="width: 8%;">
+                    <col style="width: 11%;">
+                </colgroup>
                 <thead>
                     <tr><th>No</th><th>Nama</th><th>NIP</th><th>L/P</th><th>Unit Kerja</th><th>Kecamatan</th><th>Jabatan</th><th>Golongan</th><th>Aksi</th></tr>
                 </thead>
@@ -124,6 +170,8 @@
     // --- State & DOM Elements ---
     let currentPage = 1;
     const documentsPerPage = 50;
+    let searchTerm = ''; 
+
     const pegawaiList = document.getElementById('pegawai-list');
     const prevBtn = document.getElementById('prev-btn');
     const nextBtn = document.getElementById('next-btn');
@@ -135,10 +183,15 @@
     const pegawaiForm = document.getElementById('pegawai-form');
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
     const uploadExcelInput = document.getElementById('upload-excel');
+    const searchInput = document.getElementById('search-input'); 
     
     document.addEventListener('DOMContentLoaded', () => { loadPegawai(currentPage); });
 
-    // --- FUNGSI PAGINATION & RENDER ---
+    searchInput.addEventListener('keyup', () => {
+        searchTerm = searchInput.value.trim();
+        loadPegawai(1);
+    });
+
     async function loadPegawai(page) {
         currentPage = page;
         const from = (page - 1) * documentsPerPage;
@@ -147,9 +200,21 @@
         pegawaiList.innerHTML = `<tr><td colspan="9" style="text-align: center;">Memuat data...</td></tr>`;
 
         try {
-            const { data, error, count } = await supabaseClient
-                .from('pegawai')
-                .select('*', { count: 'exact' })
+            let query = supabaseClient.from('pegawai').select('*', { count: 'exact' });
+
+            if (searchTerm) {
+                const searchPattern = `%${searchTerm}%`;
+                query = query.or(
+                    `nama.ilike.${searchPattern},` +
+                    `nip.ilike.${searchPattern},` +
+                    `unitKerja.ilike.${searchPattern},` +
+                    `kecamatan.ilike.${searchPattern},` +
+                    `jabatan.ilike.${searchPattern},` +
+                    `golongan.ilike.${searchPattern}`
+                );
+            }
+
+            const { data, error, count } = await query
                 .order('nama', { ascending: true })
                 .range(from, to);
 
@@ -157,24 +222,31 @@
             
             pegawaiList.innerHTML = '';
             if (data.length === 0) {
-                pegawaiList.innerHTML = `<tr><td colspan="9" style="text-align: center;">Data pegawai masih kosong.</td></tr>`;
+                pegawaiList.innerHTML = `<tr><td colspan="9" style="text-align: center;">${searchTerm ? `Tidak ada data yang cocok dengan "${searchTerm}".` : 'Data pegawai masih kosong.'}</td></tr>`;
             }
 
             data.forEach((pegawai, index) => {
                 pegawaiList.innerHTML += `
                     <tr>
-                        <td>${from + index + 1}</td><td>${pegawai.nama}</td><td>${pegawai.nip}</td><td>${pegawai.lp}</td>
-                        <td>${pegawai.unitKerja}</td><td>${pegawai.kecamatan}</td><td>${pegawai.jabatan}</td><td>${pegawai.golongan}</td>
+                        <td>${from + index + 1}</td>
+                        <td title="${pegawai.nama}">${pegawai.nama}</td>
+                        <td title="${pegawai.nip}">${pegawai.nip}</td>
+                        <td>${pegawai.lp}</td>
+                        <td title="${pegawai.unitKerja}">${pegawai.unitKerja}</td>
+                        <td title="${pegawai.kecamatan}">${pegawai.kecamatan}</td>
+                        <td title="${pegawai.jabatan}">${pegawai.jabatan}</td>
+                        <td>${pegawai.golongan}</td>
                         <td class="action-buttons">
-                            <button class="edit-btn" title="Edit Data" onclick="editPegawai('${pegawai.id}')"><i class="material-icons" style="font-size:22px;">edit</i></button>
-                            <button class="delete-btn" title="Hapus Data" onclick="deletePegawai('${pegawai.id}')"><i class="material-icons" style="font-size:22px;">delete_forever</i></button>
+                            <button class="edit-btn" title="Edit Data" onclick="editPegawai('${pegawai.id}')"><i class="material-icons" style="font-size:18px;">edit</i></button>
+                            <button class="delete-btn" title="Hapus Data" onclick="deletePegawai('${pegawai.id}')"><i class="material-icons" style="font-size:18px;">delete_forever</i></button>
                         </td>
                     </tr>`;
             });
 
-            pageInfo.textContent = `Halaman ${currentPage}`;
+            const totalPages = Math.ceil(count / documentsPerPage);
+            pageInfo.textContent = `Halaman ${currentPage} dari ${totalPages || 1}`;
             prevBtn.disabled = currentPage === 1;
-            nextBtn.disabled = to >= count - 1;
+            nextBtn.disabled = currentPage >= totalPages;
 
         } catch (error) {
             console.error("Gagal memuat data:", error);
@@ -204,7 +276,6 @@
                 const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
                 if (jsonData.length === 0) return alert('File Excel kosong.');
                 
-                // Supabase insert bisa menerima array langsung
                 const { error } = await supabaseClient.from('pegawai').insert(jsonData);
                 if (error) throw error;
                 
@@ -223,7 +294,6 @@
         clearDataBtn.disabled = true;
         clearDataBtn.textContent = 'Menghapus...';
         try {
-            // Menghapus semua baris yang cocok (semua baris)
             const { error } = await supabaseClient.from('pegawai').delete().neq('id', 0);
             if (error) throw error;
             alert("Semua data pegawai telah berhasil dihapus.");
@@ -256,10 +326,10 @@
 
         try {
             let error;
-            if (id) { // Mode Edit
+            if (id) {
                 const { error: updateError } = await supabaseClient.from('pegawai').update(data).eq('id', id);
                 error = updateError;
-            } else { // Mode Tambah
+            } else {
                 const { error: insertError } = await supabaseClient.from('pegawai').insert(data);
                 error = insertError;
             }
