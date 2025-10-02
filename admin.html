@@ -11,6 +11,8 @@
             --edit-color: #F5A623; --edit-hover: #D58F1D; --light-gray: #f7f8fa; --gray-border: #dfe1e5;
             --text-color: #333; --text-secondary: #666; --bg-color: #f0f2f5; --white: #ffffff;
             --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --success-color: #28a745; /* [PENAMBAHAN] Warna hijau untuk tombol upload/selesai */
+            --success-hover: #218838;
         }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; color: var(--text-color); animation: fadeIn 0.5s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -22,10 +24,51 @@
         .nav-link { background-color: var(--light-gray); color: var(--text-secondary); padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; border: 1px solid var(--gray-border); transition: all 0.2s; text-decoration: none; }
         .nav-link.active { background-color: var(--primary-color); color: var(--white); border-color: var(--primary-color); }
         button { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; border: none; transition: background-color 0.2s, box-shadow 0.2s; color: var(--white); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .pengajuan-item { border: 1px solid var(--gray-border); border-radius: 8px; padding: 20px; margin-bottom: 15px; background-color: var(--white); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .pengajuan-item p { margin: 0 0 10px 0; text-align: left; }
-        .pengajuan-item strong { color: var(--text-color); }
+        
+        .pengajuan-item { 
+            border: 1px solid var(--gray-border); 
+            border-radius: 8px; 
+            margin-bottom: 20px; 
+            background-color: var(--white); 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        .info-grid {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 10px 20px;
+        }
+        .info-grid p { margin: 0; text-align: left; }
+        .info-grid strong { color: var(--text-color); }
+
+        .actions-footer {
+            background-color: var(--light-gray);
+            padding: 20px;
+            border-top: 1px solid var(--gray-border);
+        }
+        .status-control, .upload-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .upload-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--gray-border);
+        }
         .primary-btn { background-color: var(--primary-color); }
+        .danger-btn { background-color: var(--danger-color); }
+        .danger-btn:hover { background-color: var(--danger-hover); }
+
+        /* [PENAMBAHAN] Gaya untuk tombol Upload & Selesaikan Pengajuan */
+        .upload-finalize-btn {
+            background-color: var(--success-color);
+        }
+        .upload-finalize-btn:hover {
+            background-color: var(--success-hover);
+        }
     </style>
 </head>
 <body>
@@ -59,16 +102,30 @@
     const { createClient } = supabase;
     const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // Objek untuk memetakan Golongan ke Pangkat
+    const pangkatRef = {
+        "I/a": "Juru Muda", "I/b": "Juru Muda Tingkat I", "I/c": "Juru", "I/d": "Juru Tingkat I",
+        "II/a": "Pengatur Muda", "II/b": "Pengatur Muda Tingkat I", "II/c": "Pengatur", "II/d": "Pengatur Tingkat I",
+        "III/a": "Penata Muda", "III/b": "Penata Muda Tingkat I", "III/c": "Penata", "III/d": "Penata Tingkat I",
+        "IV/a": "Pembina", "IV/b": "Pembina Tingkat I", "IV/c": "Pembina Utama Muda", "IV/d": "Pembina Utama Madya", "IV/e": "Pembina Utama"
+    };
+
     document.addEventListener('DOMContentLoaded', () => { loadDaftarPengajuan(); });
 
-    // --- MANAJEMEN PENGAJUAN (Versi Supabase) ---
     async function loadDaftarPengajuan() {
         const daftarPengajuanDiv = document.getElementById('daftar-pengajuan');
         daftarPengajuanDiv.innerHTML = '<p>Memuat data pengajuan...</p>';
 
         const { data, error } = await supabaseClient
             .from('pengajuan')
-            .select('*')
+            .select(`
+                *,
+                pegawai (
+                    unitKerja,
+                    kecamatan,
+                    golongan
+                )
+            `)
             .order('created_at', { ascending: false });
 
         if (error) {
@@ -84,38 +141,53 @@
 
         daftarPengajuanDiv.innerHTML = '';
         data.forEach(item => {
-            const tanggal = new Date(item.created_at).toLocaleDateString('id-ID');
+            const tanggal = new Date(item.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
             
-            let fileUploadSection = '';
+            const golongan = item.pegawai ? item.pegawai.golongan : 'N/A';
+            const pangkat = pangkatRef[golongan] || 'Tidak Diketahui';
+            const unitKerja = item.pegawai ? item.pegawai.unitKerja : 'N/A';
+            const kecamatan = item.pegawai ? item.pegawai.kecamatan : 'N/A';
+            
+            let uploadSection = '';
             if (item.status !== 'Selesai') {
-                fileUploadSection = `
-                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--gray-border);">
-                        <label for="file-${item.id}" style="font-size: 14px; font-weight: bold; color: var(--text-secondary);">Upload Dokumen Balasan (PDF):</label>
-                        <input type="file" id="file-${item.id}" accept=".pdf" style="margin-top: 5px; display: block; font-size: 14px;">
-                        <button onclick="uploadAndFinalize(${item.id})" style="width:auto; padding: 8px 16px; margin-top: 10px;">Upload & Selesaikan</button>
+                uploadSection = `
+                    <div class="upload-section">
+                        <div>
+                            <p style="margin:0 0 10px 0; font-weight:bold; color: var(--text-secondary);">Tindakan Penyelesaian:</p>
+                            <label for="file-${item.id}" style="font-size: 14px;">Upload Dokumen Balasan (PDF):</label>
+                            <input type="file" id="file-${item.id}" accept=".pdf" style="margin-top: 5px; display: block; font-size: 14px;">
+                            <button onclick="uploadAndFinalize(${item.id})" class="upload-finalize-btn" style="width:100%; max-width: 300px; padding: 10px; margin-top: 10px;">Upload & Selesaikan Pengajuan</button>
+                        </div>
                     </div>
                 `;
             }
 
             daftarPengajuanDiv.innerHTML += `
             <div class="pengajuan-item">
-                <p><strong>Nama Pemohon:</strong> ${item.namaPemohon || 'N/A'}</p>
-                <p><strong>NIP:</strong> ${item.nipPemohon || 'N/A'}</p>
-                <p><strong>Jenis Layanan:</strong> ${item.jenisLayanan || 'N/A'}</p>
-                <p><strong>Tanggal Pengajuan:</strong> ${tanggal}</p>
-                <p><strong>No. WA (untuk dihubungi manual): <span style="font-weight:bold; color: #155724; background-color: #e8f5e9; padding: 2px 6px; border-radius: 4px;">${item.nomorWa || 'N/A'}</span></strong></p>
-                <p><a href="${item.dokumenUrl}" target="_blank" class="primary-btn" style="width:auto; text-decoration:none; padding: 8px 16px;">Lihat Dokumen Pemohon</a></p>
-                <hr style="border:none; border-top:1px solid var(--gray-border); margin: 15px 0;">
-                <p style="display:flex; align-items:center; gap:10px;">
-                    <strong>Status:</strong> 
-                    <select onchange="updateStatus(${item.id}, this.value)" style="width:auto; padding:8px; font-size:14px; border-radius:6px; border:1px solid var(--gray-border);">
-                        <option value="Menunggu Verifikasi" ${item.status === 'Menunggu Verifikasi' ? 'selected' : ''}>Menunggu Verifikasi</option>
-                        <option value="Sedang Diproses" ${item.status === 'Sedang Diproses' ? 'selected' : ''}>Sedang Diproses</option>
-                        <option value="Selesai" ${item.status === 'Selesai' ? 'selected' : ''}>Selesai</option>
-                        <option value="Ditolak" ${item.status === 'Ditolak' ? 'selected' : ''}>Ditolak</option>
-                    </select>
-                </p>
-                ${fileUploadSection}
+                <div class="info-grid">
+                    <p><strong>Nama Pemohon:</strong><br>${item.namaPemohon || 'N/A'}</p>
+                    <p><strong>NIP:</strong><br>${item.nipPemohon || 'N/A'}</p>
+                    <p><strong>Unit Kerja:</strong><br>${unitKerja}</p>
+                    <p><strong>Kecamatan:</strong><br>${kecamatan}</p>
+                    <p><strong>Pangkat / Golongan:</strong><br>${pangkat} (${golongan})</p>
+                    <p><strong>Jenis Layanan:</strong><br>${item.jenisLayanan || 'N/A'}</p>
+                    <p><strong>Tanggal Pengajuan:</strong><br>${tanggal}</p>
+                    <p><strong>No. WA:</strong><br><span style="font-weight:bold; color: #155724;">${item.nomorWa || 'N/A'}</span></p>
+                </div>
+                <div class="actions-footer">
+                    <div class="status-control">
+                        <strong>Status:</strong> 
+                        <select onchange="updateStatus(${item.id}, this.value)" style="width:auto; padding:8px; font-size:14px; border-radius:6px; border:1px solid var(--gray-border);">
+                            <option value="Menunggu Verifikasi" ${item.status === 'Menunggu Verifikasi' ? 'selected' : ''}>Menunggu Verifikasi</option>
+                            <option value="Sedang Diproses" ${item.status === 'Sedang Diproses' ? 'selected' : ''}>Sedang Diproses</option>
+                            <option value="Selesai" ${item.status === 'Selesai' ? 'selected' : ''}>Selesai</option>
+                            <option value="Ditolak" ${item.status === 'Ditolak' ? 'selected' : ''}>Ditolak</option>
+                        </select>
+                        <a href="${item.dokumenUrl}" target="_blank" class="primary-btn" style="text-decoration:none; padding: 8px 16px;">Lihat Dokumen Pemohon</a>
+                        <button onclick="deletePengajuan(${item.id}, '${item.dokumenUrl || ''}', '${item.dokumenUrlBalasan || ''}')" class="danger-btn" style="margin-left: auto;">Hapus</button>
+                    </div>
+                    ${uploadSection}
+                </div>
             </div>`;
         });
     }
@@ -137,7 +209,6 @@
             const { data: urlData } = supabaseClient.storage.from('berkas-lajui-dah').getPublicUrl(uploadData.path);
             const downloadURL = urlData.publicUrl;
 
-            // Update baris di tabel 'pengajuan'
             const { error: updateError } = await supabaseClient
                 .from('pengajuan')
                 .update({ status: 'Selesai', dokumenUrlBalasan: downloadURL })
@@ -152,7 +223,7 @@
             console.error('Gagal mengunggah dokumen balasan:', error);
             alert('Terjadi kesalahan saat mengunggah file: ' + error.message);
             button.disabled = false;
-            button.textContent = 'Upload & Selesaikan';
+            button.textContent = 'Upload & Selesaikan Pengajuan';
         }
     }
 
@@ -169,6 +240,42 @@
             loadDaftarPengajuan();
         } catch (err) {
             alert('Gagal memperbarui status: ' + err.message);
+        }
+    }
+
+    async function deletePengajuan(id, dokumenUrl, dokumenUrlBalasan) {
+        if (!confirm('Anda yakin ingin menghapus pengajuan ini secara permanen? Tindakan ini tidak bisa dibatalkan.')) {
+            return;
+        }
+
+        try {
+            const filesToDelete = [];
+            const getPathFromUrl = (url) => {
+                if (!url || typeof url !== 'string') return null;
+                try {
+                    const path = new URL(url).pathname.split('/berkas-lajui-dah/')[1];
+                    return path ? decodeURIComponent(path) : null;
+                } catch (e) { return null; }
+            };
+
+            const mainFilePath = getPathFromUrl(dokumenUrl);
+            if (mainFilePath) filesToDelete.push(mainFilePath);
+
+            const replyFilePath = getPathFromUrl(dokumenUrlBalasan);
+            if (replyFilePath) filesToDelete.push(replyFilePath);
+
+            if (filesToDelete.length > 0) {
+                await supabaseClient.storage.from('berkas-lajui-dah').remove(filesToDelete);
+            }
+
+            const { error: dbError } = await supabaseClient.from('pengajuan').delete().eq('id', id);
+            if (dbError) throw dbError;
+
+            alert('Pengajuan berhasil dihapus.');
+            loadDaftarPengajuan();
+
+        } catch (error) {
+            alert('Gagal menghapus pengajuan: ' + error.message);
         }
     }
 </script>
