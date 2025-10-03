@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulir Usul Pensiun - LAJUI DAH</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary-color: #4A90E2; --primary-hover: #357ABD; --success-color: #28a745;
+            --light-gray: #f7f8fa; --gray-border: #dfe1e5; --text-color: #333;
+            --text-secondary: #666; --bg-color: #f0f2f5; --white: #ffffff;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+        #container { width: 100%; max-width: 800px; background-color: var(--white); padding: 40px; border-radius: 12px; box-shadow: var(--shadow); }
+        header { text-align: center; margin-bottom: 30px; }
+        h2 { font-size: 28px; margin: 0; color: var(--primary-color); }
+        h4 { font-size: 18px; color: var(--text-color); margin-top: 30px; margin-bottom: 10px; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 20px; }
+        .form-group label { font-weight: bold; font-size: 14px; color: var(--text-secondary); }
+        .input-group { display: flex; gap: 10px; }
+        .input-group input { flex-grow: 1; }
+        input, select, button { width: 100%; padding: 12px; border: 1px solid var(--gray-border); border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        button { background-color: var(--primary-color); color: var(--white); font-weight: bold; cursor: pointer; transition: background-color 0.2s; border: none; }
+        button:hover { background-color: var(--primary-hover); }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        input:read-only { background-color: var(--light-gray); color: var(--text-secondary); cursor: not-allowed; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .feedback-box { text-align: center; font-weight: bold; padding: 15px; margin-top: 15px; border-radius: 8px; }
+        .success-box { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error-box { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        #progress-container { width: 100%; background-color: var(--gray-border); border-radius: 8px; overflow: hidden; margin-top: 20px; }
+        #progress-bar { width: 0%; height: 20px; background-color: var(--success-color); text-align: center; line-height: 20px; color: white; font-size: 12px; font-weight: bold; transition: width 0.4s ease; }
+        .hidden { display: none; }
+        hr { border: none; border-top: 1px solid var(--gray-border); margin: 30px 0; }
+    </style>
+</head>
+<body>
+
+<div id="container">
+    <header><h2>Formulir Usul Pensiun</h2></header>
+    <main>
+        <div id="school-check-view">
+            <h4>Langkah 1: Masukkan NPSN Sekolah Anda</h4>
+            <div class="input-group">
+                <input type="text" pattern="[0-9]*" inputmode="numeric" id="npsn-input" placeholder="Ketik NPSN lalu klik Cek Sekolah">
+                <button id="check-school-btn" style="width: 150px;">Cek Sekolah</button>
+            </div>
+            <div id="school-feedback" class="hidden"></div>
+        </div>
+        <div id="employee-selection-view" class="hidden">
+            <hr>
+            <h4>Langkah 2: Pilih Nama Anda</h4>
+            <div class="form-group"><select id="pegawai-select" required></select></div>
+            <div id="duplicate-feedback" class="hidden"></div>
+        </div>
+        <form id="main-form-view" class="hidden">
+            <hr>
+            <h4>Langkah 3: Lengkapi dan Periksa Data Anda</h4>
+            <div class="form-grid">
+                <div class="form-group"><label for="nama-input">Nama Lengkap (Bisa diedit)</label><input id="nama-input" type="text" required></div>
+                <div class="form-group"><label>NIP</label><input id="nip-display" type="text" readonly></div>
+                <div class="form-group"><label>Pangkat / Golongan</label><input id="golongan-display" type="text" readonly></div>
+                <div class="form-group"><label>Jabatan</label><input id="jabatan-display" type="text" readonly></div>
+                <div class="form-group">
+                    <label for="jenis-pensiun">Pilih Jenis Usul Pensiun</label>
+                    <select id="jenis-pensiun" required>
+                        <option value="">-- Pilih Jenis --</option>
+                        <option value="Pensiun Usai Masa Kerja">Pensiun Usai Masa Kerja</option>
+                        <option value="Pensiun Meninggal Dunia">Pensiun Meninggal Dunia</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="dokumen-pensiun">Upload Berkas Persyaratan (PDF)</label>
+                <p style="font-size: 12px; color: var(--text-secondary); margin: 0;">
+                    <strong>Tips:</strong> Agar proses unggah lebih cepat, kompres (kecilkan ukuran) file PDF Anda terlebih dahulu.
+                </p>
+                <input id="dokumen-pensiun" type="file" accept=".pdf" required>
+            </div>
+            <button id="submit-btn" type="submit">Kirim Pengajuan</button>
+            <div id="progress-container" class="hidden"><div id="progress-bar">0%</div></div>
+            <div id="submit-feedback" class="hidden" style="margin-top: 10px;"></div>
+        </form>
+    </main>
+</div>
+
+<script>
+    // Inisialisasi Supabase
+    const SUPABASE_URL = 'https://yghywsrqhgbaryqgdxkv.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnaHl3c3JxaGdiYXJ5cWdkeGt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyNDM3MDgsImV4cCI6MjA3NDgxOTcwOH0.4lPp4zgqoTIFbOXZCtMRkgS8PzNnyDfTg5W0vsdwpR8';
+    const { createClient } = supabase;
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const pangkatRef = {
+        "I/a": "Juru Muda", "I/b": "Juru Muda Tingkat I", "I/c": "Juru", "I/d": "Juru Tingkat I",
+        "II/a": "Pengatur Muda", "II/b": "Pengatur Muda Tingkat I", "II/c": "Pengatur", "II/d": "Pengatur Tingkat I",
+        "III/a": "Penata Muda", "III/b": "Penata Muda Tingkat I", "III/c": "Penata", "III/d": "Penata Tingkat I",
+        "IV/a": "Pembina", "IV/b": "Pembina Tingkat I", "IV/c": "Pembina Utama Muda", "IV/d": "Pembina Utama Madya", "IV/e": "Pembina Utama"
+    };
+    
+    // DOM Elements
+    const checkSchoolBtn = document.getElementById('check-school-btn');
+    const npsnInput = document.getElementById('npsn-input');
+    const schoolFeedback = document.getElementById('school-feedback');
+    const employeeSelectionView = document.getElementById('employee-selection-view');
+    const pegawaiSelect = document.getElementById('pegawai-select');
+    const mainFormView = document.getElementById('main-form-view');
+    const submitBtn = document.getElementById('submit-btn');
+    const submitFeedback = document.getElementById('submit-feedback');
+    const progressContainer = document.getElementById('progress-container');
+    const progressBar = document.getElementById('progress-bar');
+    const duplicateFeedback = document.getElementById('duplicate-feedback');
+
+    let dataPegawai = [];
+    let selectedPegawai = null;
+
+    // --- TAHAP 1: CEK SEKOLAH ---
+    checkSchoolBtn.addEventListener('click', async () => {
+        const npsn = npsnInput.value;
+        if (!npsn) return alert('Mohon masukkan NPSN.');
+        checkSchoolBtn.disabled = true; checkSchoolBtn.textContent = 'Mencari...';
+        schoolFeedback.classList.add('hidden');
+        employeeSelectionView.classList.add('hidden');
+        mainFormView.classList.add('hidden');
+        try {
+            const { data: schoolData, error: schoolError } = await supabaseClient.from('sekolah').select('namaSekolah').eq('npsn', npsn).single();
+            if (schoolError) throw new Error('Sekolah dengan NPSN tersebut tidak terdaftar.');
+            schoolFeedback.textContent = `Sekolah ditemukan: ${schoolData.namaSekolah}`;
+            schoolFeedback.className = 'feedback-box success-box';
+            
+            const { data: pegawaiData, error: pegawaiError } = await supabaseClient
+                .from('pegawai')
+                .select('*')
+                .eq('npsnSekolah', npsn)
+                .not('nip', 'is', null) // Filter 1: NIP tidak boleh NULL
+                .neq('nip', '')         // Filter 2: NIP tidak boleh string kosong
+                .order('nama');
+
+            if (pegawaiError) throw pegawaiError;
+            if (pegawaiData.length === 0) throw new Error(`Tidak ada data pegawai dengan NIP di ${schoolData.namaSekolah}.`);
+            
+            dataPegawai = pegawaiData;
+            pegawaiSelect.innerHTML = '<option value="">-- Pilih Nama Anda --</option>';
+            dataPegawai.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p.id;
+                option.textContent = p.nama;
+                pegawaiSelect.appendChild(option);
+            });
+            employeeSelectionView.classList.remove('hidden');
+        } catch (error) {
+            schoolFeedback.textContent = error.message;
+            schoolFeedback.className = 'feedback-box error-box';
+        } finally {
+            schoolFeedback.classList.remove('hidden');
+            checkSchoolBtn.disabled = false; checkSchoolBtn.textContent = 'Cek Sekolah';
+        }
+    });
+
+    // --- TAHAP 2: CEK STATUS & ISI FORM ---
+    pegawaiSelect.addEventListener('change', async () => {
+        const selectedId = pegawaiSelect.value;
+        mainFormView.classList.add('hidden');
+        duplicateFeedback.classList.add('hidden');
+        if (!selectedId) return;
+
+        selectedPegawai = dataPegawai.find(p => p.id == selectedId);
+        if (!selectedPegawai) return;
+
+        try {
+            const { data: latestProposal, error } = await supabaseClient.from('pengajuan').select('status').eq('pegawai_id', selectedPegawai.id).order('created_at', { ascending: false }).limit(1).single();
+            if (error && error.code !== 'PGRST116') throw new Error('Gagal memeriksa status pengajuan.');
+
+            if (latestProposal && (latestProposal.status === 'Menunggu Verifikasi' || latestProposal.status === 'Sedang Diproses')) {
+                duplicateFeedback.textContent = `Anda sudah memiliki pengajuan aktif dengan status: "${latestProposal.status}".`;
+                duplicateFeedback.className = 'feedback-box error-box';
+                duplicateFeedback.classList.remove('hidden');
+                return; 
+            }
+            
+            document.getElementById('nama-input').value = selectedPegawai.nama || '';
+            document.getElementById('nip-display').value = selectedPegawai.nip || 'NIP tidak tersedia';
+            document.getElementById('jabatan-display').value = selectedPegawai.jabatan || '';
+
+            const golongan = selectedPegawai.golongan || '';
+            if (golongan && pangkatRef[golongan]) {
+                document.getElementById('golongan-display').value = `${pangkatRef[golongan]} (${golongan})`;
+            } else {
+                document.getElementById('golongan-display').value = golongan;
+            }
+            
+            mainFormView.classList.remove('hidden');
+        } catch (err) {
+            duplicateFeedback.textContent = err.message;
+            duplicateFeedback.className = 'feedback-box error-box';
+            duplicateFeedback.classList.remove('hidden');
+        }
+    });
+
+    // --- TAHAP 3: KIRIM PENGAJUAN ---
+    mainFormView.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!selectedPegawai) return alert('Sesi tidak valid, mohon ulangi pencarian.');
+        const file = document.getElementById('dokumen-pensiun').files[0];
+        if (!file) return alert('Mohon unggah berkas persyaratan.');
+
+        submitBtn.disabled = true; submitBtn.textContent = 'Mengunggah File...';
+        progressContainer.classList.remove('hidden');
+        progressBar.style.width = '0%'; progressBar.textContent = '0%';
+        submitFeedback.classList.add('hidden');
+
+        try {
+            const filePath = `dokumen_pensiun/${selectedPegawai.id}/${Date.now()}_${file.name}`;
+            const { data, error } = await supabaseClient.storage.from('berkas-lajui-dah').upload(filePath, file);
+            if (error) throw error;
+            
+            progressBar.style.width = '100%'; progressBar.textContent = '100%';
+            submitBtn.textContent = 'Menyimpan Data...';
+
+            const { data: urlData } = supabaseClient.storage.from('berkas-lajui-dah').getPublicUrl(data.path);
+            const downloadURL = urlData.publicUrl;
+
+            const pengajuanData = {
+                pegawai_id: selectedPegawai.id,
+                namaPemohon: document.getElementById('nama-input').value,
+                nipPemohon: selectedPegawai.nip,
+                jenisLayanan: "Pensiun - " + document.getElementById('jenis-pensiun').value,
+                dokumenUrl: downloadURL,
+                status: 'Menunggu Verifikasi',
+            };
+            const { error: insertError } = await supabaseClient.from('pengajuan').insert([pengajuanData]);
+            if (insertError) throw insertError;
+
+            const pegawaiUpdateData = {
+                nama: document.getElementById('nama-input').value
+            };
+            await supabaseClient.from('pegawai').update(pegawaiUpdateData).eq('id', selectedPegawai.id);
+
+            submitFeedback.className = 'feedback-box success-box';
+            submitFeedback.textContent = 'Pengajuan berhasil dikirim! Halaman akan dialihkan...';
+            submitFeedback.classList.remove('hidden');
+            setTimeout(() => window.location.href = 'index.html', 3000);
+        } catch (error) {
+            console.error("Error mengirim pengajuan:", error);
+            submitFeedback.className = 'feedback-box error-box';
+            submitFeedback.textContent = 'Gagal mengirim pengajuan: ' + error.message;
+            submitFeedback.classList.remove('hidden');
+            progressContainer.classList.add('hidden');
+            submitBtn.disabled = false; submitBtn.textContent = 'Kirim Pengajuan';
+        }
+    });
+</script>
+</body>
+</html>
