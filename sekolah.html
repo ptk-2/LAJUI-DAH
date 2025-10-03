@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen Sekolah - Admin LAJUI DAH</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4A90E2; --primary-hover: #357ABD; --danger-color: #D0021B; --danger-hover: #B00216;
+            --edit-color: #F5A623; --edit-hover: #D58F1D; --light-gray: #f7f8fa; --gray-border: #dfe1e5;
+            --text-color: #333; --text-secondary: #666; --bg-color: #f0f2f5; --white: #ffffff;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; color: var(--text-color); animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        #container { width: 100%; max-width: 1200px; margin: auto; background-color: var(--white); padding: 30px; border-radius: 12px; box-shadow: var(--shadow); }
+        /* [MODIFIKASI] Style header disesuaikan seperti halaman admin */
+        header { display: flex; justify-content: space-between; align-items: center; text-align: left; margin-bottom: 20px; border-bottom: 1px solid var(--gray-border); padding-bottom: 20px; }
+        header div h2 { font-size: 28px; margin: 0; }
+        h3 { font-size: 22px; color: var(--primary-color); border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; margin-top: 40px; }
+        .main-nav { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; flex-wrap: wrap; }
+        .nav-link { background-color: var(--light-gray); color: var(--text-secondary); padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; border: 1px solid var(--gray-border); transition: all 0.2s; text-decoration: none; }
+        .nav-link.active { background-color: var(--primary-color); color: var(--white); border-color: var(--primary-color); }
+        button, .button-style { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; border: none; transition: all 0.2s; color: var(--white); box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; box-shadow: none; }
+        
+        .search-container { margin-bottom: 20px; }
+        .search-container input { width: 100%; padding: 12px; border: 1px solid var(--gray-border); border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            padding: 20px;
+            background-color: var(--light-gray);
+            border: 1px solid var(--gray-border);
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .danger-btn { background-color: var(--danger-color); }
+        .danger-btn:hover { background-color: var(--danger-hover); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; table-layout: fixed; }
+        th, td { 
+            padding: 10px 8px; 
+            border-bottom: 1px solid var(--gray-border); 
+            text-align: left; 
+            font-size: 13px; 
+            word-break: break-word; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            white-space: nowrap; 
+        }
+        thead tr { background-color: var(--light-gray); }
+        tbody tr:hover { background-color: #e9ecef; }
+        .action-buttons { text-align: center !important; }
+        .action-buttons button { 
+            width: 32px; 
+            height: 32px; 
+            padding: 0; 
+            margin-right: 4px; 
+            color: white; 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; 
+            border-radius: 50%; 
+        }
+        .edit-btn { background-color: var(--edit-color); }
+        .delete-btn { background-color: var(--danger-color); }
+        
+        .hidden { display: none; }
+        .primary-btn { background-color: var(--primary-color); }
+        #toggle-school-form-btn { background-color: var(--edit-color); }
+        #upload-school-excel-label { background-color: #28a745; display: inline-block; }
+        input[type="file"] { display: none; }
+        .manual-input-area { background-color: var(--light-gray); border: 1px solid var(--gray-border); padding: 25px; border-radius: 8px; margin-top: 20px; }
+        .manual-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .manual-form input { width: 100%; padding: 10px; border: 1px solid var(--gray-border); border-radius: 6px; font-size: 14px; }
+        .form-actions { grid-column: 1 / -1; display: flex; gap: 10px; }
+        .form-actions button { width: auto; flex-grow: 1; }
+        .cancel-button { background-color: var(--text-secondary); }
+        .pagination-controls { display: flex; justify-content: center; align-items: center; gap: 20px; margin-top: 25px; }
+    </style>
+</head>
+<body>
+
+<div id="container">
+    <header>
+        <div>
+            <h2>LAJUI DAH</h2>
+            <p style="color: var(--text-secondary); margin: 5px 0 0 0;">Dasbor Admin</p>
+        </div>
+        <button id="logout-btn" class="danger-btn">Logout</button>
+    </header>
+
+    <nav class="main-nav">
+        <a href="pegawai.html" class="nav-link">Manajemen Pegawai</a>
+        <a href="sekolah.html" class="nav-link active">Manajemen Sekolah</a>
+        <a href="pangkat_ref.html" class="nav-link">Daftar Pangkat</a>
+        <a href="admin.html" class="nav-link">Daftar Pengajuan</a>
+    </nav>
+
+    <main>
+        <div id="sekolah-view">
+            <h3>Database Sekolah</h3>
+
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="Cari berdasarkan nama sekolah atau kecamatan...">
+            </div>
+
+            <div class="actions-grid">
+                <button id="download-school-template-btn" class="primary-btn">Download Template</button>
+                <label for="upload-school-excel" id="upload-school-excel-label" class="button-style">Upload Excel</label>
+                <input type="file" id="upload-school-excel" accept=".xlsx, .xls" class="hidden">
+                <button id="toggle-school-form-btn">Input Manual</button>
+                <button id="clear-school-data-btn" class="danger-btn">Bersihkan Semua Data</button>
+            </div>
+
+            <div id="manual-school-input-area" class="manual-input-area hidden">
+                <form id="school-form" class="manual-form">
+                    <input type="hidden" id="school-id">
+                    <input type="number" id="npsn-sekolah-input" placeholder="NPSN" required>
+                    <input type="text" id="nama-sekolah-input" placeholder="Nama Sekolah" required>
+                    <input type="text" id="kecamatan-sekolah-input" placeholder="Kecamatan" required>
+                    <div class="form-actions">
+                        <button type="submit" class="primary-btn">Simpan Sekolah</button>
+                        <button type="button" class="cancel-button" id="cancel-school-edit-btn">Batal</button>
+                    </div>
+                </form>
+            </div>
+            <table>
+                <colgroup>
+                    <col style="width: 5%;">
+                    <col style="width: 15%;">
+                    <col style="width: 45%;">
+                    <col style="width: 20%;">
+                    <col style="width: 15%;">
+                </colgroup>
+                <thead>
+                    <tr><th>No</th><th>NPSN</th><th>Nama Sekolah</th><th>Kecamatan</th><th>Aksi</th></tr>
+                </thead>
+                <tbody id="sekolah-list"></tbody>
+            </table>
+            <div id="school-pagination-controls" class="pagination-controls">
+                <button id="school-prev-btn" class="primary-btn">Sebelumnya</button>
+                <span id="school-page-info">Halaman 1</span>
+                <button id="school-next-btn" class="primary-btn">Berikutnya</button>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script>
+    // --- Inisialisasi Supabase ---
+    const SUPABASE_URL = 'https://yghywsrqhgbaryqgdxkv.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnaHl3c3JxaGdiYXJ5cWdkeGt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyNDM3MDgsImV4cCI6MjA3NDgxOTcwOH0.4lPp4zgqoTIFbOXZCtMRkgS8PzNnyDfTg5W0vsdwpR8';
+    const { createClient } = supabase;
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    // [PENAMBAHAN] Blok untuk memproteksi halaman dari akses non-login
+    (async () => {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session) {
+            window.location.href = 'login.html';
+        }
+    })();
+
+    // --- State & DOM Elements ---
+    let currentPage = 1;
+    const documentsPerPage = 50;
+    let searchTerm = '';
+
+    const sekolahList = document.getElementById('sekolah-list');
+    const prevBtn = document.getElementById('school-prev-btn');
+    const nextBtn = document.getElementById('school-next-btn');
+    const pageInfo = document.getElementById('school-page-info');
+    const clearSchoolDataBtn = document.getElementById('clear-school-data-btn');
+    const downloadSchoolTemplateBtn = document.getElementById('download-school-template-btn');
+    const toggleSchoolFormBtn = document.getElementById('toggle-school-form-btn');
+    const manualSchoolInputArea = document.getElementById('manual-school-input-area');
+    const schoolForm = document.getElementById('school-form');
+    const cancelSchoolEditBtn = document.getElementById('cancel-school-edit-btn');
+    const uploadSchoolExcelInput = document.getElementById('upload-school-excel');
+    const searchInput = document.getElementById('search-input');
+    
+    // [MODIFIKASI] Listener DOMContentLoaded diubah untuk menyertakan fungsi logout
+    document.addEventListener('DOMContentLoaded', () => {
+        const logoutBtn = document.getElementById('logout-btn');
+        logoutBtn.addEventListener('click', async () => {
+            await supabaseClient.auth.signOut();
+            window.location.href = 'login.html';
+        });
+
+        loadSekolah(currentPage);
+    });
+
+    searchInput.addEventListener('keyup', () => {
+        searchTerm = searchInput.value.trim();
+        loadSekolah(1);
+    });
+    
+    async function loadSekolah(page) {
+        currentPage = page;
+        const from = (page - 1) * documentsPerPage;
+        const to = from + documentsPerPage - 1;
+
+        sekolahList.innerHTML = `<tr><td colspan="5" style="text-align: center;">Memuat data...</td></tr>`;
+
+        try {
+            let query = supabaseClient.from('sekolah').select('*', { count: 'exact' });
+
+            if (searchTerm) {
+                const searchPattern = `%${searchTerm}%`;
+                query = query.or(
+                    `namaSekolah.ilike.${searchPattern},` +
+                    `kecamatan.ilike.${searchPattern}`
+                );
+            }
+
+            const { data, error, count } = await query
+                .order('namaSekolah', { ascending: true })
+                .range(from, to);
+
+            if (error) throw error;
+            
+            sekolahList.innerHTML = '';
+            if (data.length === 0) {
+                sekolahList.innerHTML = `<tr><td colspan="5" style="text-align: center;">${searchTerm ? `Tidak ada data yang cocok dengan "${searchTerm}".` : 'Data sekolah masih kosong.'}</td></tr>`;
+            }
+
+            data.forEach((sekolah, index) => {
+                sekolahList.innerHTML += `
+                    <tr>
+                        <td>${from + index + 1}</td>
+                        <td>${sekolah.npsn}</td>
+                        <td title="${sekolah.namaSekolah}">${sekolah.namaSekolah}</td>
+                        <td title="${sekolah.kecamatan}">${sekolah.kecamatan}</td>
+                        <td class="action-buttons">
+                            <button class="edit-btn" title="Edit Data" onclick="editSekolah('${sekolah.id}')"><i class="material-icons" style="font-size:18px;">edit</i></button>
+                            <button class="delete-btn" title="Hapus Data" onclick="deleteSekolah('${sekolah.id}')"><i class="material-icons" style="font-size:18px;">delete_forever</i></button>
+                        </td>
+                    </tr>`;
+            });
+
+            const totalPages = Math.ceil(count / documentsPerPage);
+            pageInfo.textContent = `Halaman ${currentPage} dari ${totalPages || 1}`;
+            prevBtn.disabled = currentPage === 1;
+            nextBtn.disabled = currentPage >= totalPages;
+
+        } catch (error) {
+            console.error("Gagal memuat data:", error);
+            sekolahList.innerHTML = `<tr><td colspan="5" style="text-align: center;">Gagal memuat data. Periksa RLS di Supabase.</td></tr>`;
+        }
+    }
+    
+    prevBtn.addEventListener('click', () => { if(currentPage > 1) loadSekolah(currentPage - 1) });
+    nextBtn.addEventListener('click', () => loadSekolah(currentPage + 1));
+
+
+    // --- FUNGSI MANAJEMEN SEKOLAH (BULK & MANUAL) ---
+    downloadSchoolTemplateBtn.addEventListener('click', () => {
+        const headers = [["npsn", "namaSekolah", "kecamatan"]];
+        const worksheet = XLSX.utils.aoa_to_sheet(headers);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Template Data Sekolah");
+        XLSX.writeFile(workbook, "Template_Sekolah.xlsx");
+    });
+    
+    uploadSchoolExcelInput.addEventListener('change', (event) => {
+        const file = event.target.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+                const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                if (jsonData.length === 0) return alert('File Excel kosong.');
+                
+                const { error } = await supabaseClient.from('sekolah').insert(jsonData);
+                if (error) throw error;
+                
+                alert(`${jsonData.length} data sekolah berhasil di-upload!`);
+                loadSekolah(1);
+            } catch (error) { alert("Gagal memproses file. Error: " + error.message); }
+        };
+        reader.readAsArrayBuffer(file);
+        event.target.value = '';
+    });
+    
+    async function clearAllSekolahData() {
+        if (!confirm("PERINGATAN: Akan menghapus SEMUA data sekolah. Lanjutkan?")) return;
+        if (!confirm("YAKIN? Data tidak bisa dikembalikan.")) return;
+        
+        clearSchoolDataBtn.disabled = true;
+        clearSchoolDataBtn.textContent = 'Menghapus...';
+        try {
+            const { error } = await supabaseClient.from('sekolah').delete().neq('id', 0);
+            if (error) throw error;
+            alert("Semua data sekolah telah berhasil dihapus.");
+        } catch (error) {
+            alert("Gagal membersihkan data: " + error.message);
+        } finally {
+            clearSchoolDataBtn.disabled = false;
+            clearSchoolDataBtn.textContent = 'Bersihkan Semua Data';
+            loadSekolah(1);
+        }
+    }
+    clearSchoolDataBtn.addEventListener('click', clearAllSekolahData);
+
+    toggleSchoolFormBtn.addEventListener('click', () => manualSchoolInputArea.classList.toggle('hidden'));
+    cancelSchoolEditBtn.addEventListener('click', () => {
+        manualSchoolInputArea.classList.add('hidden');
+        schoolForm.reset();
+        document.getElementById('school-id').value = '';
+    });
+
+    schoolForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('school-id').value;
+        const data = {
+            npsn: document.getElementById('npsn-sekolah-input').value,
+            namaSekolah: document.getElementById('nama-sekolah-input').value,
+            kecamatan: document.getElementById('kecamatan-sekolah-input').value,
+        };
+
+        try {
+            let error;
+            if (id) {
+                const { error: updateError } = await supabaseClient.from('sekolah').update(data).eq('id', id);
+                error = updateError;
+            } else {
+                const { error: insertError } = await supabaseClient.from('sekolah').insert(data);
+                error = insertError;
+            }
+            if (error) throw error;
+            
+            alert(`Data sekolah berhasil ${id ? 'diperbarui' : 'disimpan'}!`);
+            schoolForm.reset();
+            document.getElementById('school-id').value = '';
+            manualSchoolInputArea.classList.add('hidden');
+            loadSekolah(currentPage);
+        } catch (err) { alert('Error: ' + err.message); }
+    });
+
+    async function editSekolah(id) {
+        const { data, error } = await supabaseClient.from('sekolah').select('*').eq('id', id).single();
+        if (error) return alert("Gagal mengambil data: " + error.message);
+        
+        if (data) {
+            document.getElementById('school-id').value = data.id;
+            document.getElementById('npsn-sekolah-input').value = data.npsn;
+            document.getElementById('nama-sekolah-input').value = data.namaSekolah;
+            document.getElementById('kecamatan-sekolah-input').value = data.kecamatan;
+            manualSchoolInputArea.classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }
+
+    async function deleteSekolah(id) {
+        if (confirm('Yakin ingin menghapus data sekolah ini?')) {
+            const { error } = await supabaseClient.from('sekolah').delete().eq('id', id);
+            if(error) {
+                alert("Gagal menghapus data: " + error.message);
+            } else {
+                alert('Data sekolah berhasil dihapus.');
+                loadSekolah(currentPage);
+            }
+        }
+    }
+</script>
+</body>
+</html>
